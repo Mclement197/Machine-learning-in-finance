@@ -10,138 +10,351 @@ if (!requireNamespace("MASS", quietly = TRUE)) install.packages("MASS")
 library(tree)
 library(ISLR)
 
+#Please go session > set working directory > to source file location
+getwd() 
+#check -> ......./Machine-learning-in-finance/Random_Forest if you cloned the repo correctly
+
+dev_data <- read.csv("../data/ml_dev.csv")
+
+test_data <- read.csv("../data/ml_test.csv")
+
 ################################################################################
 #CLASSIFICATION TREE
 ################################################################################
 #We analyse the Carseats data set: sales of child car seats at 400 stores.
-summary(Carseats)
+summary(dev_data)
+summary(test_data)
+
+#Remove useless columns (identifiers...) and columns that cannot be used to predict lable_A
+
+predictors <- c(
+  "log_access_pct_quota",
+  "planned_months",
+  "concessional",
+  "facility_type",
+  "n_reviews_sched",
+  "prev_label_A",
+  "years_since_prev",
+  "prev_n_20y",
+  "no_track_record",
+  "net_lending_gdp",
+  "gov_debt_gdp",
+  "growth",
+  "inflation",
+  "current_account_gdp",
+  "frontload_share",
+  "n_tranches",
+  "n_struct_cond",
+  "n_prior_actions"
+)
+
+dev_rf <- dev_data[, c("label_A", predictors)]
+test_rf <- test_data[, c("label_A", predictors)]
+
+# Check no missing values
+colSums(is.na(dev_rf))
 
 #We create a variable High, which takes the value "Yes" if Sales exceeds 8
 #(thousand units) and "No" otherwise. This turns the problem into classification.
-High <- ifelse(Carseats$Sales <= 8, "No", "Yes")
-High <- as.factor(High)
-table(High)
+dev_rf$label_A <- factor(
+  dev_rf$label_A,
+  levels = c(0, 1),
+  labels = c("AtLeast90", "Under90")
+)
 
-#We use data.frame() to merge High with the rest of the Carseats data
-Carseats1 <- data.frame(Carseats, High)
+test_rf$label_A <- factor(
+  test_rf$label_A,
+  levels = c(0, 1),
+  labels = c("AtLeast90", "Under90")
+)
 
 #We use the tree() function to fit a classification tree in order to predict
 #High using all variables but Sales (Sales must be excluded: High was built from it).
-tree.carseats <- tree(High ~ . - Sales, data = Carseats1)
+tree.dev_rf <- tree(label_A ~ ., data = dev_rf)
 
 #summary() lists the variables used as internal nodes in the tree, the number
 #of terminal nodes and the training error rate.
 #(See Section 8.3.1 of the ISLR book for the definition of the residual mean
 #deviance reported below.)
-summary(tree.carseats)
+summary(tree.dev_rf)
 
 #Show the tree graphically. text() adds the node labels; pretty = 0 tells R to
 #write the category names of qualitative predictors instead of a letter per
 #category. cex makes the labels smaller so that they fit.
-plot(tree.carseats)
-text(tree.carseats, pretty = 0, cex = 0.5)
+plot(tree.dev_rf)
+text(tree.dev_rf, pretty = 0, cex = 0.5)
 
-#Print the branches of the tree: split rule, number of observations, deviance,
-#predicted class, and the share of Yes/No in the node. A * marks a terminal node.
-tree.carseats
+#Use the random forest library as requested
+
+if (!requireNamespace("randomForest", quietly = TRUE)) {
+  install.packages("randomForest")
+}
+library(randomForest)
+
+#Train default random forest on values from the library
+
+set.seed(600)
+
+rf_default_lib <- randomForest(
+  label_A ~ .,
+  data = dev_rf,
+  importance = TRUE
+)
+
+rf_default_lib
+plot(rf_default_lib)
+importance(rf_default_lib)
+varImpPlot(
+  rf_default_lib,
+  type = 1,
+  main = "Permutation Importance"
+)
+
+
+#Default with the values from the slides mtry = p/3 , node size = 5 and B = 500
+
+set.seed(600)
+
+rf_default <- randomForest(
+  label_A ~ .,
+  data = dev_rf,
+  mtry = 6,
+  ntree = 500,
+  nodesize = 5,
+  importance = TRUE
+)
+
+rf_default
+plot(rf_default)
+importance(rf_default)
+varImpPlot(
+  rf_default,
+  type = 1,
+  main = "Permutation Importance"
+)
+
+#Now tweak the hyperparameters
+
+if (!requireNamespace("caret", quietly = TRUE)) {
+  install.packages("caret")
+}
+
+library(caret)
+
+#Candidate values
+
+mtry_grid <- expand.grid(
+  mtry = c(1, 2, 4, 6, 8, 12, 18)
+)
+
+ntree_grid <- c(50, 100, 250, 500, 750, 1000, 1500)
+
+####
+#10-fold CV
+####
+
+control_10cv <- trainControl(
+  method = "cv",
+  number = 10
+)
+
+set.seed(600)
+
+results_10cv <- list()
+
+for (n_tree in ntree_grid) {
+  
+  model <- train(
+    label_A ~ .,
+    data = dev_rf,
+    method = "rf",
+    metric = "Accuracy",
+    tuneGrid = mtry_grid,
+    trControl = control_10cv,
+    ntree = n_tree
+  )
+  
+  results_10cv[[as.character(n_tree)]] <- model
+}
+
+#save results of CV
+
+cv_results <- do.call(
+  rbind,
+  lapply(names(results_10cv), function(n_tree) {
+    
+    x <- results_10cv[[n_tree]]$results
+    
+    data.frame(
+      ntree = as.numeric(n_tree),
+      mtry = x$mtry,
+      Accuracy = x$Accuracy,
+      AccuracySD = x$AccuracySD
+    )
+  })
+)
+
+cv_results
+
+#find the best
+
+best_10cv <- cv_results[
+  which.max(cv_results$Accuracy),
+]
+
+cv_results %>%
+  arrange(desc(Accuracy))
+
+best_10cv
+
+# 13   100   12 0.6671429  0.1635837
+
+#plot
+
+plot(
+  x = range(cv_results$mtry),
+  y = range(cv_results$Accuracy),
+  type = "n",
+  xlab = "mtry",
+  ylab = "CV Accuracy",
+  main = "10-fold CV Accuracy for Random Forest"
+)
+
+ntree_values <- sort(unique(cv_results$ntree))
+cols <- 1:length(ntree_values)
+
+for (i in seq_along(ntree_values)) {
+  this_ntree <- ntree_values[i]
+  temp <- cv_results[cv_results$ntree == this_ntree, ]
+  
+  lines(temp$mtry, temp$Accuracy, type = "b", col = cols[i], pch = 16)
+}
+
+legend(
+  "bottomright",
+  legend = paste("ntree =", ntree_values),
+  col = cols,
+  lty = 1,
+  pch = 16,
+  cex = 0.8
+)
+
+####
+#LOOCV
+####
+
+control_loocv <- trainControl(
+  method = "LOOCV"
+)
+
+set.seed(600)
+
+results_loocv <- list()
+
+for (n_tree in ntree_grid) {
+  
+  model <- train(
+    label_A ~ .,
+    data = dev_rf,
+    method = "rf",
+    metric = "Accuracy",
+    tuneGrid = mtry_grid,
+    trControl = control_loocv,
+    ntree = n_tree
+  )
+  
+  results_loocv[[as.character(n_tree)]] <- model
+}
+
+# Save LOOCV results
+loocv_results <- do.call(
+  rbind,
+  lapply(names(results_loocv), function(n_tree) {
+    
+    x <- results_loocv[[n_tree]]$results
+    
+    data.frame(
+      ntree = as.numeric(n_tree),
+      mtry = x$mtry,
+      Accuracy = x$Accuracy
+    )
+  })
+)
+
+loocv_results %>%
+  arrange(desc(Accuracy))
+
+# Find best LOOCV combination
+best_loocv <- loocv_results[
+  which.max(loocv_results$Accuracy),
+]
+
+best_loocv
+
+# 15   250    1 0.6666667
+
+#We are getting different best hyperparameters using LOOCV and 10-fold so we are going to use 10-fold's result because as said in the lecture, 10-fold has higher variance than LOOCV
+#Especially considering 23   100    1 0.6242857 0.06600007 si rankied 23rd best with 10-fold
+#but 3    100   12 0.6595745 is ranked 3rd according to LOOCV so 100 12 is prob one of the best
+
 
 ################################################################################
-#Estimate the test error: 200 of the 400 stores as training set, the rest as test set
+# FINAL RANDOM FOREST
 ################################################################################
-set.seed(2)
-train <- sample(1:nrow(Carseats1), 200)
-Carseats.test <- Carseats1[-train, ]
-High.test <- Carseats1$High[-train]
 
-#Fit the classification tree on the training data only
-tree.carseats <- tree(High ~ . - Sales, data = Carseats1, subset = train)
+set.seed(600)
 
-#Predict the class on the test data
-tree.pred <- predict(tree.carseats, Carseats.test, type = "class")
+rf_final <- randomForest(
+  label_A ~ .,
+  data = dev_rf,
+  ntree = 100,
+  mtry = 12,
+  importance = TRUE
+)
 
-#Confusion matrix: rows = predicted, columns = true
-table(tree.pred, High.test)
+rf_final
 
-#Misclassification error on the test data
-mean(tree.pred != High.test)
+#now we test
 
-################################################################################
-#Pruning the tree
-################################################################################
-#We next consider whether pruning the tree might lead to improved results.
-#cv.tree() performs cross validation in order to determine the optimal level of
-#tree complexity. Cost-complexity pruning is used to select a sequence of trees
-#for consideration. FUN = prune.misclass tells R to use the classification
-#error rate to guide the cross validation and the pruning, rather than the
-#default of cv.tree(), which is the deviance.
-set.seed(10)
-cv.carseats <- cv.tree(tree.carseats, FUN = prune.misclass)
-names(cv.carseats)
-#size: the number of terminal nodes of each tree considered
-#dev: the cross validation error (number of misclassified observations) for each tree
-#k: the value of the cost-complexity parameter (alpha in the slides)
-cv.carseats
+pred_test <- predict(
+  rf_final,
+  newdata = test_rf
+)
 
-par(mfrow = c(1, 2))
-plot(cv.carseats$size, cv.carseats$dev, type = "b",
-     xlab = "number of terminal nodes", ylab = "CV error")
-plot(cv.carseats$k, cv.carseats$dev, type = "b",
-     xlab = "alpha (cost-complexity parameter)", ylab = "CV error")
-par(mfrow = c(1, 1))
+confusionMatrix(
+  pred_test,
+  test_rf$label_A
+)
 
-#The best size is the one with the lowest CV error. We read it off the results
-#instead of typing it by hand, so that the code also works with another seed.
-#(If several sizes tie, which.min takes the first one listed, i.e. the largest.)
-best.size <- cv.carseats$size[which.min(cv.carseats$dev)]
-best.size
+cm_final <- confusionMatrix(
+  pred_test,
+  test_rf$label_A
+)
 
-#Prune the tree to the best size and display it
-prune.carseats <- prune.misclass(tree.carseats, best = best.size)
-plot(prune.carseats)
-text(prune.carseats, pretty = 0)
+final_accuracy <- cm_final$overall["Accuracy"]
 
-#Compute the test error rate using the pruned tree and compare it with the
-#unpruned tree above. A smaller tree that predicts as well is easier to read.
-tree.pred <- predict(prune.carseats, Carseats.test, type = "class")
-table(tree.pred, High.test)
-mean(tree.pred != High.test)
+final_accuracy
 
-################################################################################
-#REGRESSION TREE
-################################################################################
-#We use the Boston Housing data set again (package MASS). Target: medv.
-library(MASS)
-set.seed(1)
-train <- sample(1:nrow(Boston), nrow(Boston) / 2)
-tree.boston <- tree(medv ~ ., Boston, subset = train)
-summary(tree.boston)
-#Only a few of the 13 variables are used. lstat and rm dominate.
+#permutation on final model
+final_importance <- importance(
+  rf_final,
+  type = 1
+)
 
-plot(tree.boston)
-text(tree.boston, pretty = 0)
+final_importance
 
-#Cross validation to see whether pruning helps (default: deviance, i.e. squared error)
-set.seed(1)
-cv.boston <- cv.tree(tree.boston)
-plot(cv.boston$size, cv.boston$dev, type = "b",
-     xlab = "number of terminal nodes", ylab = "CV deviance")
-#Here the most complex tree is (usually) selected by cross validation.
-#If we wish to prune the tree anyway, we can do so with prune.tree():
-prune.boston <- prune.tree(tree.boston, best = 5)
-plot(prune.boston)
-text(prune.boston, pretty = 0)
+varImpPlot(
+  rf_final,
+  type = 1,
+  main = "Permutation Importance - Final Random Forest"
+)
 
-#In keeping with the CV results, we use the unpruned tree to make predictions
-#on the test data.
-yhat <- predict(tree.boston, newdata = Boston[-train, ])
+#comapre
+rf_default_lib
+rf_final
 
-#True values on the test data
-boston.test <- Boston[-train, "medv"]
-plot(yhat, boston.test, xlab = "predicted medv", ylab = "true medv")
-abline(0, 1)
-#The points form horizontal bands: a tree can only predict a handful of
-#different values, one per terminal node.
+default_oob <- tail(rf_default_lib$err.rate[, "OOB"], 1)
+final_oob   <- tail(rf_final$err.rate[, "OOB"], 1)
 
-#Test MSE of the regression tree
-mean((yhat - boston.test)^2)
-#Keep this number in mind: the random forest script gets a much lower one.
+default_oob
+final_oob
