@@ -33,7 +33,7 @@ predictors <- c(
   "concessional",
   "facility_type",
   "n_reviews_sched",
-  "prev_label_A",
+  "prev_label_B",
   "years_since_prev",
   "prev_n_20y",
   "no_track_record",
@@ -48,29 +48,29 @@ predictors <- c(
   "n_prior_actions"
 )
 
-dev_rf <- dev_data[, c("label_A", predictors)]
-test_rf <- test_data[, c("label_A", predictors)]
+dev_rf <- dev_data[, c("label_B", predictors)]
+test_rf <- test_data[, c("label_B", predictors)]
 
 # Check no missing values
 colSums(is.na(dev_rf))
 
 #We create a variable High, which takes the value "Yes" if Sales exceeds 8
 #(thousand units) and "No" otherwise. This turns the problem into classification.
-dev_rf$label_A <- factor(
-  dev_rf$label_A,
+dev_rf$label_B <- factor(
+  dev_rf$label_B,
   levels = c(0, 1),
-  labels = c("AtLeast90", "Under90")
+  labels = c("no", "yes")
 )
 
-test_rf$label_A <- factor(
-  test_rf$label_A,
+test_rf$label_B <- factor(
+  test_rf$label_B,
   levels = c(0, 1),
-  labels = c("AtLeast90", "Under90")
+  labels = c("no", "yes")
 )
 
 #We use the tree() function to fit a classification tree in order to predict
 #High using all variables but Sales (Sales must be excluded: High was built from it).
-tree.dev_rf <- tree(label_A ~ ., data = dev_rf)
+tree.dev_rf <- tree(label_B ~ ., data = dev_rf)
 
 #summary() lists the variables used as internal nodes in the tree, the number
 #of terminal nodes and the training error rate.
@@ -96,7 +96,7 @@ library(randomForest)
 set.seed(600)
 
 rf_default_lib <- randomForest(
-  label_A ~ .,
+  label_B ~ .,
   data = dev_rf,
   importance = TRUE
 )
@@ -116,7 +116,7 @@ varImpPlot(
 set.seed(600)
 
 rf_default <- randomForest(
-  label_A ~ .,
+  label_B ~ .,
   data = dev_rf,
   mtry = 6,
   ntree = 500,
@@ -153,19 +153,50 @@ ntree_grid <- c(50, 100, 250, 500, 750, 1000, 1500)
 #10-fold CV
 ####
 
-control_10cv <- trainControl(
-  method = "cv",
-  number = 10
+# Control CV with fixed country folds
+
+country <- as.character(dev_data$iso3c)
+countries <- unique(country)
+
+stopifnot(
+  length(country) == nrow(dev_rf),
+  !anyNA(country),
+  all(nzchar(country)),
+  length(countries) >= 10L
 )
 
 set.seed(600)
 
+country_fold <- sample(
+  rep(seq_len(10), length.out = length(countries))
+)
+
+row_fold <- country_fold[match(country, countries)]
+
+folds_10cv <- lapply(
+  seq_len(10),
+  function(k) which(row_fold != k)
+)
+
+names(folds_10cv) <- paste0("Fold", seq_len(10))
+
+control_10cv <- trainControl(
+  method = "cv",
+  number = 10,
+  index = folds_10cv
+)
+
+
+
+
+
 results_10cv <- list()
 
 for (n_tree in ntree_grid) {
+  set.seed(600)
   
   model <- train(
-    label_A ~ .,
+    label_B ~ .,
     data = dev_rf,
     method = "rf",
     metric = "Accuracy",
@@ -243,8 +274,18 @@ legend(
 #LOOCV
 ####
 
+# Hold out every programme from one country at a time.
+folds_loco <- lapply(
+  countries,
+  function(held_out_country) which(country != held_out_country)
+)
+
+names(folds_loco) <- paste0("Country_", countries)
+
 control_loocv <- trainControl(
-  method = "LOOCV"
+  method = "cv",
+  number = length(folds_loco),
+  index = folds_loco
 )
 
 set.seed(600)
@@ -254,7 +295,7 @@ results_loocv <- list()
 for (n_tree in ntree_grid) {
   
   model <- train(
-    label_A ~ .,
+    label_B ~ .,
     data = dev_rf,
     method = "rf",
     metric = "Accuracy",
@@ -305,10 +346,10 @@ best_loocv
 set.seed(600)
 
 rf_final <- randomForest(
-  label_A ~ .,
+  label_B ~ .,
   data = dev_rf,
-  ntree = 100,
-  mtry = 12,
+  ntree = best_10cv$ntree,
+  mtry = best_10cv$mtry,
   importance = TRUE
 )
 
@@ -323,13 +364,16 @@ pred_test <- predict(
 
 confusionMatrix(
   pred_test,
-  test_rf$label_A
+  test_rf$label_B
 )
 
 cm_final <- confusionMatrix(
-  pred_test,
-  test_rf$label_A
+  data = pred_test,
+  reference = test_rf$label_B,
+  positive = "yes"
 )
+
+cm_final
 
 final_accuracy <- cm_final$overall["Accuracy"]
 
