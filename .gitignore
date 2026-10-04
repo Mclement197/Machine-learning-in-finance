@@ -1,1 +1,10 @@
 /Presentation/presentation.pdf
+*.toc
+*.vrb
+*.synctex.gz
+*.out
+*.nav
+*.log
+*.aux
+*.synctex(busy)
+*.snm
