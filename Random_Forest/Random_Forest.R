@@ -43,8 +43,8 @@ getwd()
 #      the forest on it.
 #test = test set: programmes approved from 2014 to 2016. We use it only once,
 #      at the end, to measure the prediction accuracy.
-dev_data  <- read.csv("../data/ml_dev.csv")
-test_data <- read.csv("../data/ml_test.csv")
+dev_data  <- read.csv("../Data/processed/train.csv")
+test_data <- read.csv("../Data/processed/test.csv")
 dim(dev_data)
 dim(test_data)
 summary(dev_data)

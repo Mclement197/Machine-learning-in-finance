@@ -8,3 +8,11 @@
 *.aux
 *.synctex(busy)
 *.snm
+Data/processed/imf_programmes.xlsx
+Data/processed/test.csv
+Data/processed/train.csv
+Data/summary/class_balance.csv
+Data/summary/summary_by_outcome.csv
+Data/summary/summary_by_split.csv
+Data/summary/summary_statistics.csv
+Data/summary/variable_description.csv
