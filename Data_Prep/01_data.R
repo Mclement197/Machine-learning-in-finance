@@ -26,9 +26,10 @@ library(readxl)
 Sys.setlocale("LC_TIME", "C")
 
 #Folders in repo
-dir_raw  <- "Data/raw/"
-dir_proc <- "Data/processed/"
-dir_fig  <- "Data_Prep/figures/"
+dir_raw  <- "../Data/raw/"
+dir_proc <- "../Data/processed/"
+dir_sum <- "../Data/summary/"
+dir_fig  <- "../Data_Prep/figures/"
 if (!dir.exists(dir_proc)) dir.create(dir_proc, recursive = TRUE)
 if (!dir.exists(dir_fig))  dir.create(dir_fig,  recursive = TRUE)
 
@@ -560,10 +561,10 @@ length(unique(final$Member.Code))                                #number of coun
 table(table(final$Member.Code))                                  #countries with 1, 2, 3... programmes
 
 #Save the tables for the paper
-write.csv(desc,       paste0(dir_proc, "summary_statistics.csv"), row.names = FALSE)
-write.csv(by_outcome, paste0(dir_proc, "summary_by_outcome.csv"), row.names = FALSE)
-write.csv(by_split,   paste0(dir_proc, "summary_by_split.csv"),   row.names = FALSE)
-write.csv(balance,    paste0(dir_proc, "class_balance.csv"),      row.names = FALSE)
+write.csv(desc,       paste0(dir_sum, "summary_statistics.csv"), row.names = FALSE)
+write.csv(by_outcome, paste0(dir_sum, "summary_by_outcome.csv"), row.names = FALSE)
+write.csv(by_split,   paste0(dir_sum, "summary_by_split.csv"),   row.names = FALSE)
+write.csv(balance,    paste0(dir_sum, "class_balance.csv"),      row.names = FALSE)
 
 ################################################################################
 # 1f. Step 11: exploratory data analysis
@@ -735,7 +736,7 @@ table(excluded$reason_type)
 
 #12c. Save: CSV plus the Excel file for the submission (close it in Excel first!).
 #writexl writes .xlsx (readxl can only read).
-write.csv(var_info, paste0(dir_proc, "variable_description.csv"), row.names = FALSE)
+write.csv(var_info, paste0(dir_sum, "variable_description.csv"), row.names = FALSE)
 if (!requireNamespace("writexl", quietly = TRUE)) install.packages("writexl")
 all_data <- rbind(cbind(split = "train", train[, model_cols]),
                   cbind(split = "test",  test[,  model_cols]))
@@ -752,3 +753,4 @@ list.files(dir_proc)
 # Output: interrupted. Inputs: the 13 variables in `inputs`
 # (facility_type is in the files for information only, it is NOT an input)
 ################################################################################
+
