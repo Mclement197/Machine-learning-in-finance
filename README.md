@@ -1,184 +1,129 @@
-# Machine Learning in Finance – Group Assignment
+# Machine Learning in Finance
 
-## Goal
+This project predicts whether an IMF lending programme will be interrupted. The
+workflow is split into data preparation and model-specific analysis. Data
+preparation must always be completed before a model is trained or tested.
 
-Build a financial predictive machine learning project using a financial dataset of our choice.
+## Project Structure
 
-The assignment counts for 30% of the final course grade. All group members receive the same grade.
+```text
+Machine-learning-in-finance/
+|-- Data/
+|   |-- raw/                 # Source data used by the preparation script
+|   |-- processed/           # Generated train and test data
+|   `-- summary/             # Generated summary tables
+|-- Data_Prep/
+|   |-- 01_data.R            # Cleans data and creates train.csv and test.csv
+|   `-- figures/             # Generated exploratory-analysis figures
+|-- Random_Forest/
+|   |-- Random_Forest.R      # Trains, tunes, and tests the random forest
+|   `-- fig_*.png            # Generated model figures
+|-- Presentation/            # Presentation source files
+`-- README.md
+```
 
-## Dataset Requirements
+The files in `Data/processed/`, `Data/summary/`, and `Data_Prep/figures/` are
+outputs of the data-preparation script. Do not run a model against stale or
+manually edited versions of these files.
 
-The dataset should:
+## Requirements
 
-- Be related to finance.
-- Have at least 10 predictors.
-- Ideally contain at least a few hundred observations.
-- NOT be a time-series dataset.
-- Have a clearly defined target variable Y.
-- Have clearly defined predictor variables X.
-- Address either a regression or classification problem.
+- R and, preferably, RStudio
+- Git LFS for downloading the raw data files
+- An internet connection the first time the R packages are installed
 
-Possible data sources include Bloomberg, Eikon/LSEG, Yahoo Finance, Google Finance, World Bank, FRED, ECB, IMF, ESG databases, etc.
+After cloning the repository, install Git LFS and download the LFS-managed
+files:
 
----
+```bash
+git lfs install
+git lfs pull
+```
 
-## Task 1 – Research Question, Data & EDA | 20%
+The R scripts install missing packages automatically. Data preparation uses
+`readxl` and `writexl`. The random forest analysis uses `tree`, `randomForest`,
+`caret`, and `pROC`.
 
-1. Introduce the financial topic.
-2. Conduct an academic literature review, ideally using top finance journals and related academic sources.
-3. Identify whether there is a gap in the existing literature that the project addresses.
-4. Define the research goal using predictive modelling terminology.
-5. Explain why the prediction problem is financially relevant.
-6. Clearly state whether it is a regression or classification problem.
-7. Describe the study design and data collection process.
-8. Present summary statistics using R.
-9. Preprocess the data if necessary.
-10. Perform exploratory data analysis (EDA) using R.
-11. Define the input variables X and output variable Y.
-12. Explain why these variables are appropriate from a predictive modelling perspective.
+## Run the Project
 
----
+### 1. Prepare the data
 
-## Task 2 – Random Forest | 40%
+Run `Data_Prep/01_data.R` first. The script reads the source files from
+`Data/raw/`, cleans and splits the observations, and creates:
 
-The Random Forest is the main model of the project.
+- `Data/processed/train.csv`
+- `Data/processed/test.csv`
+- `Data/processed/imf_programmes.xlsx`
+- Summary tables in `Data/summary/`
+- Exploratory-analysis figures in `Data_Prep/figures/`
 
-1. Explain the Random Forest methodology.
-2. Train a Random Forest using the `randomForest` package in R with default hyperparameters.
-3. Tune the Random Forest hyperparameters:
-   - Number of trees (`ntree`)
-   - Number of variables considered at each split (`mtry`)
-4. Perform the tuning using the `caret` package with BOTH:
-   - 10-fold cross-validation
-   - Leave-One-Out Cross-Validation (LOOCV)
-5. Choose the final Random Forest model.
-6. Make predictions using the final model.
-7. Report prediction accuracy.
-8. Discuss the prediction results using appropriate predictive modelling terminology.
-9. Calculate predictor importance using permutation importance with the `randomForest` package.
-10. Interpret and discuss the variable importance results.
-11. Finish with remarks covering:
-   - Main findings
-   - Limitations
-   - Potential future improvements
+The scripts use paths relative to their own directories. In RStudio, open
+`Data_Prep/01_data.R`, select **Session > Set Working Directory > To Source File
+Location**, and run the script.
 
----
+Alternatively, run it from R after setting `Data_Prep` as the working directory:
 
-## Task 3 – Alternative Models | 10%
+```r
+setwd("path/to/Machine-learning-in-finance/Data_Prep")
+source("01_data.R", echo = TRUE)
+```
 
-### Simple Model
+Do not continue until `Data/processed/train.csv` and
+`Data/processed/test.csv` have been generated successfully.
 
-Train and test a simpler model, for example:
+### 2. Train and test a model
 
-- Linear regression
-- Decision tree
+Each model belongs in its own folder and reads the train and test files created
+in the previous step. Currently, the random forest is the only implemented
+model.
 
-Compare it with the Random Forest in terms of:
+In RStudio, open `Random_Forest/Random_Forest.R`, select **Session > Set Working
+Directory > To Source File Location**, and run the script.
 
-- Prediction accuracy
-- Interpretability
+Alternatively, run it from R after setting `Random_Forest` as the working
+directory:
 
-Discuss the trade-off between interpretability and predictive performance.
+```r
+setwd("path/to/Machine-learning-in-finance/Random_Forest")
+source("Random_Forest.R", echo = TRUE)
+```
 
-### Neural Network
+The script:
 
-Train and test a Neural Network on the same dataset.
+- Loads `Data/processed/train.csv` and `Data/processed/test.csv`
+- Trains a default random forest
+- Tunes `ntree` and `mtry` using cross-validation
+- Selects and evaluates the final model on the test data
+- Calculates permutation variable importance
+- Saves model plots in `Random_Forest/`
 
-Compare its predictive accuracy with the Random Forest and discuss the results.
+Model tuning, particularly leave-one-out cross-validation, can take several
+minutes.
 
----
+## Required Execution Order
 
-## Task 4 – Presentation | 20%
+```text
+Data/raw/
+    |
+    v
+Data_Prep/01_data.R
+    |
+    v
+Data/processed/train.csv + Data/processed/test.csv
+    |
+    v
+Random_Forest/Random_Forest.R
+    |
+    v
+Trained model, test results, and figures
+```
 
-Prepare a 15-minute presentation INCLUDING Q&A.
+If the raw data or preparation logic changes, rerun `Data_Prep/01_data.R`
+before rerunning any model.
 
-- Presentation date: 07.10.2026
-- One or several group members can present.
-- All group members should attend and be able to answer questions.
+## Adding Models
 
----
-
-## Code Quality | 10%
-
-The R code must be:
-
-- Clear
-- Well structured
-- Reproducible
-
-Someone with access to the submitted dataset and R code must be able to reproduce the results shown in the report and presentation.
-
-Use `set.seed()` where necessary to ensure reproducibility.
-
----
-
-## Deliverables
-
-Submit:
-
-project/
-├── data.xlsx
-├── analysis.R
-├── report.pdf
-└── presentation.pdf
-
-### Report
-
-Approximately:
-
-- 10 pages
-- 1.5 line spacing
-- 11 pt font
-
-The report must include all references used, including coding or other aids such as ChatGPT where applicable.
-
-### Deadline
-
-Final submission: 14.10.2026 at 17:00
-
-Submission is via StudyNet/Canvas email to the lecturer.
-
-The email should contain:
-
-- Canvas group number/name
-- Names of all group members
-- All required files
-
----
-
-## Recommended Workflow
-
-Research question
-→ Find dataset
-→ Define X and Y
-→ Literature review
-→ Summary statistics
-→ EDA
-→ Preprocessing
-→ Train/test setup
-→ Default Random Forest
-→ Tune ntree + mtry with 10-fold CV
-→ Tune with LOOCV
-→ Select final Random Forest
-→ Generate predictions
-→ Evaluate prediction accuracy
-→ Permutation importance
-→ Train simple model
-→ Train Neural Network
-→ Compare all models
-→ Discuss limitations
-→ Conclusion
-→ Write report
-→ Prepare presentation
-
----
-
-## Main Principle
-
-This is primarily a PREDICTIVE modelling project, not a causal inference project.
-
-The central question is:
-
-"How accurately can we predict Y for new observations using the available X variables?"
-
-Therefore, focus on OUT-OF-SAMPLE predictive performance rather than simply obtaining a good fit on the training data.
+Future models should follow the same structure as `Random_Forest/`: keep each
+model in a separate folder and load the generated files from
+`Data/processed/`. All models should use the same train and test split so their
+out-of-sample results are comparable.
