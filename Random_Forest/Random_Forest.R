@@ -45,6 +45,10 @@ getwd()
 #      at the end, to measure the prediction accuracy.
 dev_data  <- read.csv("../Data/processed/train.csv")
 test_data <- read.csv("../Data/processed/test.csv")
+dev_data$label_B  <- dev_data$interrupted
+test_data$label_B <- test_data$interrupted
+dev_data$iso3c    <- dev_data$Member.Code
+test_data$iso3c   <- test_data$Member.Code
 dim(dev_data)
 dim(test_data)
 summary(dev_data)
@@ -62,10 +66,9 @@ summary(test_data)
 #  programmes (correlation 0.90 with n_reviews_sched), so it adds nothing.
 predictors <- c("log_access_pct_quota", "planned_months", "n_reviews_sched",
                 "concessional", "extended",
-                "n_struct_cond", "n_prior_actions", "frontload_share",
-                "prev_label_A", "years_since_prev", "prev_n_20y", "no_track_record",
-                "growth", "inflation", "current_account_gdp",
-                "gov_debt_gdp", "net_lending_gdp")
+                "n_struct_cond", "n_prior_actions",
+                "years_since_prev", "prev_n_20y", "no_track_record",
+                "growth", "inflation", "current_account_gdp")
 
 dev_rf  <- dev_data[, c("label_B", predictors)]
 test_rf <- test_data[, c("label_B", predictors)]
@@ -215,7 +218,7 @@ dev.off()
 #Default with the starting values from the course slides: mtry = p/3, node
 #size = 5 and B = 500 trees. With p = 17, p/3 is 5 (rounded down).
 set.seed(72)
-rf_slides <- randomForest(label_B ~ ., data = dev_rf, mtry = 5, ntree = 500,
+rf_slides <- randomForest(label_B ~ ., data = dev_rf, mtry = 4, ntree = 500,
                           nodesize = 5, importance = TRUE)
 rf_slides
 importance(rf_slides, type = 1, scale = FALSE)
