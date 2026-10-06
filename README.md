@@ -4,6 +4,18 @@ This project predicts whether an IMF lending programme will be interrupted. The
 workflow is split into data preparation and model-specific analysis. Data
 preparation must always be completed before a model is trained or tested.
 
+## Presentation
+
+The completed slide deck is in [Presentation/presentation.pdf](Presentation/presentation.pdf).
+An [editable PowerPoint version](Presentation/presentation.pptx) is also available.
+Its editable [LaTeX source](Presentation/presentation.tex) uses the Metropolis
+Beamer template. See [Presentation/README.md](Presentation/README.md) for build
+instructions, figure provenance and content notes.
+
+```bash
+latexmk -xelatex -interaction=nonstopmode -halt-on-error -file-line-error -cd Presentation/presentation.tex
+```
+
 ## Project Structure
 
 ```text
