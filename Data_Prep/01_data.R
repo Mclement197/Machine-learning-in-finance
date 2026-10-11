@@ -7,10 +7,12 @@
 # TASK: predict, on the day the IMF Executive Board approves a lending
 # programme, whether the programme will be INTERRUPTED (binary classification).
 #
-# HOW TO RUN: open the RStudio project (the repository root, the folder that
-# contains Data/ and Data_Prep/) and run
-#     source("Data_Prep/01_data.R", echo = TRUE)
-# INPUT:  Data/raw/        OUTPUT: Data/processed/ and Data_Prep/figures/
+# HOW TO RUN: from the repository root (the folder that contains Data/ and
+# Data_Prep/) run  source("Data_Prep/01_data.R", echo = TRUE)
+# or open this file and run it with the working directory set to Data_Prep/.
+# The paths below work in both cases.
+# INPUT:  Data/raw/
+# OUTPUT: Data/processed/, Data/summary/ and Data_Prep/figures/
 # Nothing in this script is random (the split is by approval year), so no
 # set.seed() is needed.
 ################################################################################
@@ -25,12 +27,14 @@ library(readxl)
 # Avoid issues with Windows in German (or any language other than English)
 Sys.setlocale("LC_TIME", "C")
 
-#Folders in repo
-dir_raw  <- "../Data/raw/"
-dir_proc <- "../Data/processed/"
-dir_sum <- "../Data/summary/"
-dir_fig  <- "../Data_Prep/figures/"
+#Folders in repo. Works whether R runs from the repo root or from inside Data_Prep/
+root     <- if (dir.exists("Data/raw")) "" else "../"
+dir_raw  <- paste0(root, "Data/raw/")
+dir_proc <- paste0(root, "Data/processed/")
+dir_sum  <- paste0(root, "Data/summary/")
+dir_fig  <- paste0(root, "Data_Prep/figures/")
 if (!dir.exists(dir_proc)) dir.create(dir_proc, recursive = TRUE)
+if (!dir.exists(dir_sum))  dir.create(dir_sum,  recursive = TRUE)
 if (!dir.exists(dir_fig))  dir.create(dir_fig,  recursive = TRUE)
 
 #Raw files (datasets)
@@ -435,9 +439,7 @@ m <- !is.na(prog$arr_id)
 summary(prog[m, c("growth", "inflation", "current_account_gdp")])
 colSums(is.na(prog[m, c("growth", "inflation", "current_account_gdp")]))   #5, 8, 10
 
-#No fiscal variables: the WEO only exists as the revised April 2026 vintage
-#(= look-ahead), and in Mecon the government balance / debt are missing for
-#24% / 45% of our programmes. See the "excluded" table in Step 12.
+#No fiscal variables: see the "excluded" table in Step 12 (discussed in the paper, 1g)
 
 ################################################################################
 # Step 9: final sample, time split, imputation with TRAIN medians, export
@@ -669,10 +671,8 @@ dev.off()
 ################################################################################
 # 1g. Step 12: inputs, output and what is left out
 ################################################################################
-#The guiding rule (Shmueli 2010, "To Explain or to Predict?"): in predictive
-#modelling an input must be available at the time of prediction ("ex-ante
-#availability"). Our prediction is made on the day the Board approves the
-#programme, so every input is taken from approval-day information only.
+#Rule: every input must be known on approval day (ex-ante availability,
+#Shmueli 2010). The choice is discussed in the paper (1g).
 
 #12a. Variable table: one row per variable, with the reason to expect it to
 #help the prediction
@@ -753,4 +753,3 @@ list.files(dir_proc)
 # Output: interrupted. Inputs: the 13 variables in `inputs`
 # (facility_type is in the files for information only, it is NOT an input)
 ################################################################################
-
