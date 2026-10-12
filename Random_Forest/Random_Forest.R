@@ -1,11 +1,9 @@
 ################################################################################
-# RANDOM FOREST: WILL AN IMF PROGRAMME GO OFF TRACK? (Task 2)
+# RANDOM FOREST: PREDICTING IMF PROGRAMME INTERRUPTION
 ################################################################################
-#
-# Run Data_Prep/01_data.R first. Put this file in Random_Forest/ and use:
-# RStudio > Session > Set Working Directory > To Source File Location.
-# Then run the whole script. Its seven graphs are collected at the end.
-# Optional seed/bootstrap checks are in Random_Forest_Diagnostics.R.
+# Run Data_Prep/01_data.R first, then run this script from Random_Forest/.
+# In RStudio: Session > Set Working Directory > To Source File Location.
+# Results are saved in rf_outputs/; the seven graphs are generated in Section 11.
 
 ################################################################################
 # 1. PACKAGES AND DATA
@@ -24,14 +22,12 @@ if (!all(file.exists(c("../Data/processed/train.csv", "../Data/processed/test.cs
   stop("Run Data_Prep/01_data.R first, then set the working directory to Random_Forest/.")
 }
 
-# Development: approvals in 2002-2013. Test: approvals in 2014-2016.
-# These files already contain the training-median imputation from 01_data.R.
-# Do not re-impute, resplit, reorder rows or scale these data here.
+# Load development (2002-2013) and test (2014-2016) programmes.
+# Missing values have already been filled using development-set medians.
 dev_data  <- read.csv("../Data/processed/train.csv")
 test_data <- read.csv("../Data/processed/test.csv")
 
-# e15037c maps the new column names to those used by the RF analysis.
-# label_B is now only an alias of interrupted, not the old disbursement label.
+# Use label_B for the interruption outcome and iso3c for country grouping.
 dev_data$label_B  <- dev_data$interrupted
 test_data$label_B <- test_data$interrupted
 dev_data$iso3c    <- dev_data$Member.Code
@@ -40,16 +36,15 @@ test_data$iso3c   <- test_data$Member.Code
 dim(dev_data)
 dim(test_data)
 
-# Thirteen approval-day inputs, in exactly the order used in e15037c.
-# Do not bring back prev_label_A/B, frontload_share, gov_debt_gdp,
-# net_lending_gdp or n_tranches from the early dataset.
-# The extended and concessional indicators are used instead of facility_type.
+# Select 13 predictors available at programme approval.
+# Country identifiers are used for validation folds, not as predictors.
 predictors <- c("log_access_pct_quota", "planned_months", "n_reviews_sched",
                 "concessional", "extended",
                 "n_struct_cond", "n_prior_actions",
                 "years_since_prev", "prev_n_20y", "no_track_record",
                 "growth", "inflation", "current_account_gdp")
 
+# Check required columns, missing values and outcome coding.
 required <- c("label_B", "iso3c", predictors)
 if (!all(required %in% names(dev_data)) || !all(required %in% names(test_data))) {
   stop("Missing columns: regenerate train.csv and test.csv with the updated 01_data.R.")
@@ -64,9 +59,9 @@ if (!all(dev_rf$label_B %in% c(0, 1)) || !all(test_rf$label_B %in% c(0, 1))) {
   stop("The interrupted outcome must be coded 0 or 1.")
 }
 
-# A factor outcome tells randomForest() to classify, not regress.
-# yes = interrupted: fewer reviews completed than scheduled at approval.
-# Keep this factor-level order; positive = "yes" is set when scoring.
+# Use a factor for classification: no = completed, yes = interrupted.
+# Interruption means at least one approval-scheduled review was never completed.
+# Evaluation treats "yes" as the positive class.
 dev_rf$label_B <- factor(dev_rf$label_B, levels = c(0, 1), labels = c("no", "yes"))
 test_rf$label_B <- factor(test_rf$label_B, levels = c(0, 1), labels = c("no", "yes"))
 summary(dev_rf)
@@ -77,26 +72,24 @@ table(test_rf$label_B)
 round(prop.table(table(test_rf$label_B)), 3)
 
 ################################################################################
-# 2. THREE SMALL HELPERS FOR SCORING
+# 2. PERFORMANCE METRICS
 ################################################################################
-# Accuracy is the fraction classified correctly.
-# Sensitivity catches interrupted programmes; specificity catches completed ones.
-# Balanced accuracy gives both classes equal weight. Always predicting one
-# class has balanced accuracy 0.50 when both classes are present.
-# The calculation is kept identical to Ali's version.
+# Balanced accuracy averages sensitivity (interrupted programmes) and
+# specificity (completed programmes), giving both classes equal weight.
+# Both classes must be present for the metric to be defined.
 balanced_accuracy <- function(y_true, y_pred) {
   sens <- mean(y_pred[y_true == "yes"] == "yes")
   spec <- mean(y_pred[y_true == "no"]  == "no")
   (sens + spec) / 2
 }
 
-#Turns the forest's probability (share of trees voting "yes") into a class.
-#The threshold is 0.50 by default: "yes" if at least half of the trees vote "yes".
+# Predict "yes" when its vote share reaches the threshold.
+# This helper defaults to 0.50; the final model uses a tuned threshold.
 to_class <- function(p, threshold = 0.5) {
   factor(ifelse(p >= threshold, "yes", "no"), levels = c("no", "yes"))
 }
 
-#One line of scores from a confusion matrix of caret
+# Extract four performance metrics from a caret confusion matrix.
 cm_row <- function(cm, name, sample_name) {
   data.frame(model = name, sample = sample_name,
              accuracy    = round(cm$overall[["Accuracy"]], 3),
@@ -106,45 +99,42 @@ cm_row <- function(cm, name, sample_name) {
 }
 
 ################################################################################
-# 3. START WITH ONE CLASSIFICATION TREE
+# 3. CLASSIFICATION TREE
 ################################################################################
-# Before the forest, one classification tree on the development set, as in the
-# course. A single tree can change substantially when the training data change.
-# The forest averages many trees. The tree graph is drawn in Section 11.
+# Fit a single classification tree on the development data.
 tree.dev_rf <- tree(label_B ~ ., data = dev_rf)
 summary(tree.dev_rf)
 
 ################################################################################
-# 4. DEFAULT FOREST AND THE MODELS USED IN ALI'S GRAPHS
+# 4. DEFAULT AND COMPARISON FORESTS
 ################################################################################
-# ntree = number of trees. Default classification mtry = floor(sqrt(13)) = 3.
-# Default nodesize = 1. These replace the obsolete comments about 17 inputs.
+# Fit 500 trees with default classification settings: mtry = 3, nodesize = 1.
+# mtry is the number of candidate predictors considered at each split.
 set.seed(72)
 rf_default <- randomForest(label_B ~ ., data = dev_rf, ntree = 500)
 rf_default
 
-# This is training accuracy, not an estimate of performance on new programmes.
+# Calculate accuracy on the observations used to train the model.
 p_in_sample <- predict(rf_default, newdata = dev_rf, type = "response")
 mean(p_in_sample == dev_rf$label_B)
 
-# Fixed default model, evaluated as a benchmark. Test scores are not used
-# anywhere below to select the hyperparameters or classification threshold.
+# Evaluate the default model on the test set at threshold 0.50.
+# These scores are not used to choose model settings or the final threshold.
 p_default_test <- predict(rf_default, newdata = test_rf, type = "prob")[, "yes"]
 cm_default <- confusionMatrix(to_class(p_default_test), test_rf$label_B, positive = "yes")
 cm_default
 
-# The 1,000-tree fit is only for Ali's OOB-error graph.
+# Fit 1,000 trees to plot out-of-bag (OOB) error against forest size.
 set.seed(72)
 rf_long <- randomForest(label_B ~ ., data = dev_rf, ntree = 1000)
 
-# Keep this separate importance-enabled fit: merging it with rf_default would
-# change the random-number sequence and could change the benchmark predictions.
+# Fit a separate default-settings forest to calculate permutation importance.
+# This is not the forest used for the default model's test predictions.
 set.seed(72)
 rf_default_imp <- randomForest(label_B ~ ., data = dev_rf, ntree = 500, importance = TRUE)
 importance(rf_default_imp, type = 1, scale = FALSE)
 
-# Additional comparator retained for Ali's graphs, not the package default:
-# mtry = floor(13/3) = 4, nodesize = 5, ntree = 500 (as updated in e15037c).
+# Fit a comparison forest with mtry = 4, nodesize = 5 and 500 trees.
 set.seed(72)
 rf_slides <- randomForest(label_B ~ ., data = dev_rf, mtry = 4, ntree = 500,
                           nodesize = 5, importance = TRUE)
@@ -159,12 +149,12 @@ importance(rf_slides, type = 1, scale = FALSE)
 ntree_grid <- c(100, 250, 500, 1000)
 mtry_grid  <- expand.grid(mtry = c(2, 3, 4, 6, 8, 12))
 
-# Keep Ali's country-fold construction and seed exactly.
-# Country CV holds out countries; the final test split holds out later years.
-# A split by year does not, by itself, guarantee unseen test countries.
+# Keep all programmes of a country in the same validation fold.
+# The final test set instead contains later years, not necessarily new countries.
 set.seed(72)
 folds_country <- groupKFold(dev_data$iso3c, k = 10)
 
+# Save out-of-fold classes and probabilities for every tuning combination.
 control_10cv <- trainControl(method = "cv", number = 10, classProbs = TRUE,
                              savePredictions = "all")
 control_country <- trainControl(method = "cv", index = folds_country, classProbs = TRUE,
@@ -172,15 +162,14 @@ control_country <- trainControl(method = "cv", index = folds_country, classProbs
 control_loocv <- trainControl(method = "LOOCV", classProbs = TRUE,
                               savePredictions = "all")
 
-# The train() calls deliberately retain Ali's settings. The stored validation
-# predictions, not caret's internal bestTune, select our final model by BA.
-# Do not replace this with model$bestTune: caret's default score is Accuracy.
+# Select settings using balanced accuracy calculated from saved predictions.
+# caret's internal bestTune uses ordinary accuracy and is not used for selection.
 cv_results <- NULL
 
 ################################################################################
 # 6A. 10-FOLD CV
 ################################################################################
-# Ordinary 10-fold CV: hold out programmes, not entire countries.
+# Hold out individual programmes and average performance across folds.
 models_10cv <- list()
 for (n_tree in ntree_grid) {
   set.seed(72)
@@ -208,7 +197,7 @@ for (n_tree in ntree_grid) {
 ################################################################################
 # 6B. 10-FOLD CV BY COUNTRY
 ################################################################################
-# Grouped 10-fold CV: every programme of a country stays in the same fold.
+# Hold out entire countries and average performance across folds.
 models_country <- list()
 for (n_tree in ntree_grid) {
   set.seed(72)
@@ -245,8 +234,8 @@ for (n_tree in ntree_grid) {
   models_loocv[[as.character(n_tree)]] <- model
 
   for (m in mtry_grid$mtry) {
-    # One observation cannot supply both sensitivity and specificity.
-    # Score all leave-one-out predictions together, as in Ali's version.
+    # Pool leave-one-out predictions: a single observation cannot provide
+    # both sensitivity and specificity.
     pred_m <- model$pred[model$pred$mtry == m, ]
     bal <- balanced_accuracy(pred_m$obs, pred_m$pred)
     acc <- mean(pred_m$obs == pred_m$pred)
@@ -259,9 +248,8 @@ for (n_tree in ntree_grid) {
 ################################################################################
 # 7. SELECT THE FINAL SETTINGS AND THRESHOLD
 ################################################################################
-# Keep rounding and the first-maximum tie rule from e15037c.
-# A tie selects the smaller ntree, then smaller mtry, in grid order.
-# Results must be read from these tables, not from old code comments.
+# Select the highest balanced accuracy, rounded to three decimals.
+# Ties use the first grid entry: fewer trees, then smaller mtry.
 cv_results
 res_10cv    <- cv_results[cv_results$scheme == "10-fold CV", ]
 res_country <- cv_results[cv_results$scheme == "10-fold CV by country", ]
@@ -271,20 +259,19 @@ best_country <- res_country[which.max(res_country$bal_acc), ]
 best_loocv   <- res_loocv[which.max(res_loocv$bal_acc), ]
 rbind(best_10cv, best_country, best_loocv)
 
-# As in Ali's final version, country-grouped CV selects the forest.
+# Use the settings selected by country-grouped cross-validation.
 final_ntree <- best_country$ntree
 final_mtry  <- best_country$mtry
 final_ntree
 final_mtry
 
-# Out-of-fold predictions: the held-out programme and its country were not
-# used to fit the forest that produced each of these predictions.
+# Retrieve predictions made while each programme's country was held out.
 model_country <- models_country[[as.character(final_ntree)]]
 oof <- model_country$pred[model_country$pred$mtry == final_mtry, ]
 oof <- oof[order(oof$rowIndex), ]
 
-# Choose the threshold on development predictions only, never on test data.
-# Keep the search and its first-maximum tie rule; do not hardcode 0.50.
+# Maximise pooled out-of-fold balanced accuracy using development data only.
+# Search thresholds from 0.05 to 0.95; ties select the lowest threshold.
 thresholds <- seq(0.05, 0.95, by = 0.01)
 best_threshold <- 0.5
 best_bal <- -1
@@ -301,8 +288,8 @@ cat(sprintf("Best threshold: %.2f\n", best_threshold))
 ################################################################################
 # 8. FINAL FOREST, TEST PREDICTIONS AND ACCURACY
 ################################################################################
-# Fit on the whole development set using the selected ntree and mtry.
-# importance = TRUE is retained to preserve Ali's final fit and importance.
+# Fit the selected forest on all development observations and calculate
+# permutation importance. Evaluate test predictions at the tuned threshold.
 set.seed(72)
 rf_final <- randomForest(label_B ~ ., data = dev_rf, ntree = final_ntree,
                          mtry = final_mtry, importance = TRUE)
@@ -313,11 +300,12 @@ pred_test <- to_class(p_test, best_threshold)
 cm_final <- confusionMatrix(pred_test, test_rf$label_B, positive = "yes")
 cm_final
 
-# Fixed always-interrupted benchmark from the existing analysis.
+# Benchmark: predict interruption for every test programme.
 pred_baseline <- factor(rep("yes", nrow(test_rf)), levels = c("no", "yes"))
 cm_baseline <- confusionMatrix(pred_baseline, test_rf$label_B, positive = "yes")
 
-# Pooled out-of-fold BA can differ from the mean-fold BA used for tuning.
+# Evaluate pooled out-of-fold predictions at the tuned threshold.
+# This differs from averaging fold scores using the saved class predictions.
 cm_oof <- confusionMatrix(to_class(oof$yes, best_threshold), oof$obs, positive = "yes")
 results_tbl <- rbind(cm_row(cm_baseline, "Baseline: all interrupted", "test"),
                      cm_row(cm_default,  "RF default", "test"),
@@ -328,16 +316,15 @@ results_tbl
 ################################################################################
 # 9. PERMUTATION IMPORTANCE AND OOB COMPARISON
 ################################################################################
-# For each tree: score the OOB observations, shuffle one predictor, score
-# again and record the accuracy decrease. Then average over the trees.
-# type = 1 chooses permutation importance. scale = FALSE keeps accuracy units;
-# scale = TRUE divides by the corresponding standard error.
-# This is ordinary-accuracy importance, not balanced-accuracy importance.
-# It describes this fitted model; it does not identify direction or causality.
+# Average the drop in each tree's OOB accuracy after shuffling a predictor.
+# type = 1 selects permutation importance; scale = FALSE keeps accuracy units.
+# scale = TRUE divides by the standard error. This uses ordinary accuracy,
+# not balanced accuracy, and does not establish direction or causality.
 final_importance <- importance(rf_final, type = 1, scale = FALSE)
 round(final_importance[order(final_importance[, 1], decreasing = TRUE), , drop = FALSE], 4)
 importance(rf_final, type = 1, scale = TRUE)
 
+# Compare the default and tuned forests using their final OOB error rates.
 default_oob <- tail(rf_default$err.rate[, "OOB"], 1)
 final_oob   <- tail(rf_final$err.rate[, "OOB"], 1)
 default_oob
@@ -346,8 +333,8 @@ final_oob
 ################################################################################
 # 10. AUC AND SAVED RESULTS
 ################################################################################
-# AUC uses the probability scores rather than the selected class threshold.
-# This is Ali's pROC calculation with the direction explicitly fixed.
+# AUC evaluates the ranking of vote shares without a classification threshold.
+# Higher scores represent a greater predicted probability of interruption.
 if (!requireNamespace("pROC", quietly = TRUE)) install.packages("pROC")
 library(pROC)
 auc_score <- function(y_true, p) {
@@ -362,7 +349,7 @@ auc_results <- data.frame(
 )
 auc_results
 
-# These exports only save the calculated results; they do not change any fit.
+# Save tuning scores, model metrics, settings, test predictions and importance.
 dir.create("rf_outputs", showWarnings = FALSE)
 write.csv(cv_results, "rf_outputs/cv_results.csv", row.names = FALSE)
 write.csv(results_tbl, "rf_outputs/model_scores.csv", row.names = FALSE)
@@ -379,15 +366,10 @@ write.csv(data.frame(variable = rownames(final_importance),
           "rf_outputs/permutation_importance.csv", row.names = FALSE)
 
 ################################################################################
-# 11. ALI'S SEVEN GRAPHS
+# 11. GRAPHS
 ################################################################################
-# Kept together so the modelling sections above are easier to follow.
-# The plot calls, filenames, colours, labels and image sizes are preserved.
-# Ali noted that the graph layout and styling were made with AI assistance.
-# This refactoring also used ChatGPT; disclose coding assistance in the report.
-#
-# The current plotting device records the plots for dev.copy(). RStudio
-# already does this; enabling it also supports a PDF device under Rscript.
+# Plot the tree, OOB errors, tuning results and importance; save seven PNGs.
+# Enable plot recording so dev.copy() can export the current plot.
 par(mfrow = c(1, 1))
 dev.control(displaylist = "enable")
 
@@ -399,7 +381,7 @@ dev.copy(png, "fig_tree.png", width = 1400, height = 900)
 dev.off()
 par(mar = c(5.1, 4.1, 4.1, 2.1))
 
-# Shared OOB plotting helper, unchanged from Ali.
+# Plot overall and class-specific OOB error as the number of trees increases.
 plot_oob <- function(rf, title) {
   par(mar = c(5, 5, 4, 2))
   plot(rf$err.rate[, "OOB"], type = "l", lwd = 2, col = "steelblue",
@@ -426,13 +408,13 @@ dev.copy(png, "fig_rf_importance_default.png", width = 800, height = 600)
 dev.off()
 
 
-# 4. Course-settings OOB error.
+# 4. Comparison-forest OOB error.
 plot_oob(rf_slides, "OOB error, forest with the starting values of the slides")
 dev.copy(png, "fig_rf_oob_slides.png", width = 800, height = 500)
 dev.off()
 
 
-# 5. Course-settings permutation importance.
+# 5. Comparison-forest permutation importance.
 par(mar = c(5, 5, 4, 2))
 varImpPlot(rf_slides, sort = TRUE, type = 1, scale = FALSE, pch = 19, col = "steelblue",
            cex = 1.1, main = "Permutation importance, forest with the slides' values")
@@ -468,6 +450,5 @@ varImpPlot(rf_final, sort = TRUE, type = 1, scale = FALSE, pch = 19, col = "stee
 dev.copy(png, "fig_rf_importance_final.png", width = 800, height = 600)
 dev.off()
 
-# Optional additional checks, after this script has finished:
+# Optional: run the separate seed-sensitivity and bootstrap diagnostics.
 # source("Random_Forest_Diagnostics.R")
-# Keep that file separate unless you need the seed ranges/bootstrap intervals.
