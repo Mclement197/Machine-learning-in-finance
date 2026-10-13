@@ -5,8 +5,8 @@
 % required to compile. The bibliography is followed by the list of aids and
 % the declaration of authorship with blank signature fields.
 \documentclass[fleqn,11pt]{olplainarticle}
-% Retain the template's asymmetric journal margins, on A4 rather than US letter.
-\geometry{a4paper,headheight=14pt}
+% Author-requested symmetric 2 cm side margins on A4.
+\geometry{a4paper,left=2cm,right=2cm,headheight=14pt}
 \usepackage{fontspec}
 \setmainfont{texgyretermes}[
   Extension=.otf,UprightFont=*-regular,ItalicFont=*-italic,
@@ -22,9 +22,9 @@
 \usepackage{hyperref}
 \definecolor{HSGGreen}{HTML}{00843D}
 \hypersetup{
-  pdftitle={Reading IMF Programmes on Day One},
+  pdftitle={Can Approval-Day Information Predict Interruptions of Conditional Lending Programmes?},
   pdfauthor={Mathis Clément; Ethan Moore; Ali Haidar; Tristan Zemp; Joao Matteo Pisaturo; José Pablo Caldas; Federico Marcelli},
-  pdfsubject={Approval-time prediction of IMF programme interruptions},
+  pdfsubject={Approval-day prediction of conditional lending programme interruptions},
   colorlinks=true,linkcolor=color1,citecolor=color1,urlcolor=HSGGreen
 }
 \setlength{\tabcolsep}{4pt}
@@ -65,7 +65,7 @@
     {\small #1\par}%
   }}
 
-\title{Reading IMF Programmes on Day One}
+\title{Can Approval-Day Information Predict Interruptions of Conditional Lending Programmes?}
 \author{\mbox{Mathis Clément}}
 \author{\mbox{Ethan Moore}}
 \author{\mbox{Ali Haidar}}
@@ -74,7 +74,7 @@
 \author{\mbox{José Pablo Caldas}}
 \author{\mbox{Federico Marcelli}}
 \affil{University of St. Gallen}
-\date{Machine Learning in Finance\enspace\textbullet\enspace Autumn 2026}
+\date{Machine Learning in Finance\enspace\textbullet\enspace 14 October 2026}
 \renewcommand\Authfont{\normalfont\sffamily\bfseries\fontsize{11}{14}\selectfont}
 \renewcommand\Affilfont{\normalfont\sffamily\fontsize{10}{12}\selectfont}
 \setlength{\affilsep}{6pt}
@@ -89,7 +89,7 @@
   {\raggedright\sffamily\bfseries\fontsize{20}{25}\selectfont\@title\par}
   \vspace{5pt}
   {\raggedright\sffamily\fontsize{11}{14}\selectfont
-    Predicting programme interruptions with approval-time information\par}
+    A Comparison of Random Forests, Logistic Regression and Neural Networks\par}
   \vspace{12pt}
   {\raggedright\sffamily\fontsize{11}{14}\selectfont\@author\par}
   \vspace{5pt}
@@ -102,6 +102,8 @@
 \begin{document}
 \maketitle
 \thispagestyle{empty}
+\tableofcontents
+\clearpage
 \input{parts/01_literature}
 \input{parts/02_study_design}
 \input{parts/03_data}
