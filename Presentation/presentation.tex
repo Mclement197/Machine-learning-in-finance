@@ -338,13 +338,13 @@
   \vspace{-2mm}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.48\textwidth}
-      \small \textbf{Flat grid.} Curves cross and scores stay within roughly five percentage points; no setting dominates.
+      \small \textbf{Flat grid.} Curves cross and scores stay within roughly four to seven percentage points; no setting dominates.
     \end{column}
     \begin{column}{0.48\textwidth}
       \small \textbf{Selected with country CV:} 250 trees, \texttt{mtry} = 3; balanced accuracy \alert{0.620}.
     \end{column}
   \end{columns}
-  \source{Country-grouped validation holds out entire countries, giving the most conservative tuning scores here. Source: original random-forest tuning figure.}
+  \source{Country-grouped validation holds out entire countries, giving the lowest best validation score in this comparison. Source: original random-forest tuning figure.}
 \end{frame}
 
 % 9. Forest results -----------------------------------------------------------
@@ -369,13 +369,16 @@
     \end{column}
     \begin{column}{0.39\textwidth}
       \eyebrow{Substantial uncertainty}
-      \metric{0.51--0.64}{Balanced accuracy}{Across 20 random seeds}
+      {\large\bfseries\color{HSGGreen}Threshold = 0.51\par}
+      \small Selected using development out-of-fold predictions.\par
       \vspace{5mm}
-      \metric{0.38--0.75}{Bootstrap interval}{Reported 95\% interval; includes 0.50}
+      {\large\bfseries\color{HSGGreen}28 test programmes\par}
+      \small One additional correct prediction changes balanced accuracy by approximately 0.03--0.05.\par
       \vspace{3mm}
       \small With only 28 test observations, the result is sensitive to random variation.
     \end{column}
   \end{columns}
+  \source{0.620 is mean-fold tuning balanced accuracy; 0.630 is pooled development OOF balanced accuracy at threshold 0.51. The latter is not an independent final assessment: development results informed model and threshold selection.}
   \takeaway{The development signal does not translate into a reliable test-set edge over chance.}
 \end{frame}
 
@@ -385,7 +388,7 @@
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.60\textwidth}
       \includegraphics[width=\linewidth,height=6.8cm,keepaspectratio]{rf_importance.png}
-      \source{Permutation importance: mean decrease in accuracy after shuffling each predictor.}
+      \source{Permutation importance: mean decrease in ordinary out-of-bag (OOB) accuracy, not balanced accuracy, after shuffling each predictor.}
     \end{column}
     \begin{column}{0.35\textwidth}
       \eyebrow{The strongest predictors}
@@ -398,7 +401,7 @@
       \end{enumerate}
       \vspace{3mm}
       Macro variables have little importance here; growth and inflation are at or below zero.
-      \takeaway{Predictive importance is not a causal effect.}
+      \takeaway{Importance establishes neither direction nor causality.}
     \end{column}
   \end{columns}
 \end{frame}

@@ -433,13 +433,13 @@ def build():
     text(s, 0.60, 1.15, 12.13, 0.38,
          "24 settings: 6 mtry values × 4 tree counts; balanced accuracy under three validation schemes.", 17)
     image(s, "rf_tuning.png", 0.72, 1.73, 11.89, 4.63)
-    text(s, 0.60, 6.40, 5.90, 0.65,
-         "Flat grid. Curves cross; scores stay within roughly five points. No setting dominates.", 15.5)
+    text(s, 0.60, 6.40, 5.90, 0.72,
+         "Flat grid. Curves cross; scores stay within roughly four to seven percentage points. No setting dominates.", 15.5)
     text(s, 7.00, 6.40, 5.73, 0.65,
          "Selected with country CV: 250 trees; mtry = 3; balanced accuracy 0.620.", 15.5)
     s.notes_slide.notes_text_frame.text = (
-        "Country-grouped validation holds out entire countries, giving the most conservative "
-        "tuning scores here. Source: original random-forest tuning figure."
+        "Country-grouped validation holds out entire countries, giving the lowest best validation "
+        "score in this comparison. Source: original random-forest tuning figure."
     )
 
     # 9. Forest performance
@@ -456,18 +456,27 @@ def build():
     text(s, 0.60, 5.36, 6.71, 0.93,
          "Development scores use out-of-fold predictions; final performance is measured on later programmes.", 17)
     label(s, 8.05, 1.18, 4.68, "Substantial uncertainty")
-    metric(s, 8.05, 1.84, 4.68, "0.51–0.64", "Balanced accuracy", "Across 20 random seeds", 36)
-    metric(s, 8.05, 3.81, 4.68, "0.38–0.75", "Bootstrap interval",
-           "Reported 95% interval; includes 0.50", 36)
+    text(s, 8.05, 1.84, 4.68, 0.50, "Threshold = 0.51", 26, True, GREEN)
+    text(s, 8.05, 2.48, 4.68, 0.90,
+         "Selected using development out-of-fold predictions.", 17)
+    text(s, 8.05, 3.81, 4.68, 0.50, "28 test programmes", 26, True, GREEN)
+    text(s, 8.05, 4.45, 4.68, 1.02,
+         "One additional correct prediction changes balanced accuracy by approximately 0.03–0.05.", 17)
     text(s, 8.05, 5.63, 4.68, 0.67,
          "With only 28 test observations, the result is sensitive to random variation.", 16)
     takeaway(s, "The development signal does not translate into a reliable test-set edge over chance.")
+    s.notes_slide.notes_text_frame.text = (
+        "0.620 is mean-fold tuning balanced accuracy; 0.630 is pooled development OOF "
+        "balanced accuracy at threshold 0.51. The latter is not an independent final "
+        "assessment because development results informed model and threshold selection."
+    )
 
     # 10. Importance
     s = base(prs, "Random forest: programme design leads", "Random forest", 9)
     image(s, "rf_importance.png", 0.60, 1.20, 7.25, 5.44)
-    source(s, 0.60, 6.78, 7.25,
-           "Permutation importance: mean decrease in accuracy after shuffling each predictor.", 0.23)
+    source(s, 0.60, 6.68, 7.25,
+           "Permutation importance: mean decrease in ordinary out-of-bag (OOB) accuracy, "
+           "not balanced accuracy, after shuffling each predictor.", 0.40)
     label(s, 8.48, 1.20, 4.25, "The strongest predictors")
     for i, entry in enumerate([
         "1.  Number of scheduled reviews", "2.  Extended facility indicator",
@@ -476,7 +485,7 @@ def build():
         text(s, 8.48, 1.86 + i * 0.91, 4.25, 0.74, entry, 18)
     text(s, 8.48, 4.84, 4.25, 1.16,
          "Macro variables have little importance here; growth and inflation are at or below zero.", 17)
-    takeaway(s, "Predictive importance is not a causal effect.", 6.20, 0.79, 8.48, 4.25, 16)
+    takeaway(s, "Importance establishes neither direction nor causality.", 6.20, 0.79, 8.48, 4.25, 16)
 
     # 11. Logistic regression
     s = base(prs, "Logistic regression: a transparent benchmark", "Logistic regression", 10)
