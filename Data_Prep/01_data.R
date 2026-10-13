@@ -31,6 +31,7 @@ dir_proc <- "../Data/processed/"
 dir_sum <- "../Data/summary/"
 dir_fig  <- "../Data_Prep/figures/"
 if (!dir.exists(dir_proc)) dir.create(dir_proc, recursive = TRUE)
+if (!dir.exists(dir_sum))  dir.create(dir_sum,  recursive = TRUE)
 if (!dir.exists(dir_fig))  dir.create(dir_fig,  recursive = TRUE)
 
 #Raw files (datasets)
