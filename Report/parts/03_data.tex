@@ -1,0 +1,107 @@
+% Verbatim source: Report/initial/ML in Finance paper – Data sections (1d, 1e, 1g) (1).docx
+\addsec{\src{Data and variables}}
+\addsubsec{\src{Data and summary statistics}}
+
+\src{Our final dataset covers 173 IMF lending programmes in 86 countries, approved between 2002 and 2016; 82 of them (47.4\%) were interrupted.}
+
+\src{Starting from the IMF's list of 1,576 lending arrangements since 1952, we keep the 221 non-precautionary arrangements approved in 2002–2016 and drop rapid one-off loans (RCF, RFI) and the Precautionary and Liquidity Line, which have no review schedule and so cannot be interrupted. Merging blended programmes into one observation leaves 182 programmes, of which 173 match the IMF's Monitoring of Fund Arrangements (MONA) database. A programme counts as interrupted if fewer reviews were completed than were scheduled at approval. We split by approval year (training 2002–2013, n = 145; test 2014–2016, n = 28) and fill the few missing values with training-set medians, so nothing from the test period leaks into training.}
+
+\begin{wordtable}
+\wordtablecaption{tab:summary}{\src{Table \thetable. Summary statistics of the 13 inputs (before imputation, n = 173)}}
+\begin{tabularx}{\linewidth}{@{}lXrrrrrr@{}}
+\toprule
+\src{Variable} & \src{Unit} & \src{Missing} & \src{Mean} & \src{SD} & \src{Min} & \src{Median} & \src{Max}\\
+\midrule
+\src{log\_access\_pct\_quota} & \src{log of \% of quota} & \src{0} & \src{4.62} & \src{1.29} & \src{1.61} & \src{4.50} & \src{8.08}\\
+\src{planned\_months} & \src{months} & \src{0} & \src{32.58} & \src{7.56} & \src{7.20} & \src{35.98} & \src{47.97}\\
+\src{n\_reviews\_sched} & \src{count} & \src{0} & \src{6.60} & \src{2.27} & \src{2} & \src{6} & \src{16}\\
+\src{n\_struct\_cond} & \src{count} & \src{1} & \src{10.67} & \src{4.98} & \src{2} & \src{10} & \src{26}\\
+\src{n\_prior\_actions} & \src{count} & \src{1} & \src{2.79} & \src{2.98} & \src{0} & \src{2} & \src{16}\\
+\src{prev\_n\_20y} & \src{count} & \src{0} & \src{3.35} & \src{2.06} & \src{0} & \src{3} & \src{8}\\
+\src{years\_since\_prev} & \src{years} & \src{11} & \src{4.09} & \src{6.82} & \src{0} & \src{1.62} & \src{47.74}\\
+\src{growth} & \src{\%} & \src{5} & \src{4.04} & \src{4.23} & \src{-8.69} & \src{4.15} & \src{24.46}\\
+\src{inflation} & \src{\%} & \src{8} & \src{7.73} & \src{7.93} & \src{-17.69} & \src{5.50} & \src{48.04}\\
+\src{current\_account\_gdp} & \src{\% of GDP} & \src{10} & \src{-8.62} & \src{11.77} & \src{-92.49} & \src{-6.20} & \src{15.36}\\
+\src{concessional} & \src{0/1} & \src{0} & \src{0.64} & \src{0.48} & \src{0} & \src{1} & \src{1}\\
+\src{extended} & \src{0/1} & \src{0} & \src{0.69} & \src{0.46} & \src{0} & \src{1} & \src{1}\\
+\src{no\_track\_record} & \src{0/1} & \src{0} & \src{0.06} & \src{0.25} & \src{0} & \src{0} & \src{1}\\
+\bottomrule
+\end{tabularx}
+\par\smallskip
+{\footnotesize\itshape\src{For binary variables the mean is the share of programmes with value 1. Source: own calculations, summary\_statistics.csv.}\par}
+\end{wordtable}
+
+\src{The classes are close to balanced overall, but interruptions rise from 39\% of approvals in 2002–2004 to 61\% in 2014–2016. They are the minority in training (65 of 145, 44.8\%) and the majority in the test set (17 of 28, 60.7\%). Always predicting "interrupted" would therefore already be right for 60.7\% of test programmes, which is the benchmark the models in Task 2 have to beat.}
+
+\src{ECFs, concessional loans to low-income countries, make up 97 of the 173 programmes, followed by 47 SBAs, 16 EFFs, 8 blends and 5 SCFs. Interruption rates range from 64\% for SBAs to 38\% for ECFs and blends.}
+
+\src{A typical programme runs for three years with six scheduled reviews, ten structural conditions and two prior actions. Access in percent of quota is strongly right-skewed, so we use its log, and the macro variables have long tails (inflation runs from -18\% to 48\%). Missing values are rare: years\_since\_prev is undefined for the 11 first-time borrowers, and no other input misses more than 10 values.}
+
+\src{Interrupted programmes differ from completed ones mainly in deal structure. They schedule more reviews (7.3 against 5.9), receive more access (mean log access 4.96 against 4.31) and are less often concessional (52\% against 74\%) or extended (59\% against 79\%), all with t-test p-values below 0.01. Gaps in conditionality, track record and macro conditions are smaller, with p-values of 0.09 or more.}
+
+\src{The test period also differs in its inputs: its programmes are larger, longer and carry more conditions, and only half are concessional (against 66\% in training). Test accuracy therefore also shows how well a model transfers to a later period, not just how well it fits.}
+
+\addsubsec{\src{Choice of input and output variables}}
+
+\src{The output is whether a programme was interrupted. All 13 inputs are known on the day the IMF Executive Board approves the programme, which is when the prediction is made.}
+
+\src{\textbf{Selection principle.} A predictive input must be available at the time of prediction and carry information about the outcome; it needs no causal interpretation (Shmueli, 2010). We therefore use only approval-day information: the "upon approval" columns of the commitments list and MONA's approval snapshot (R0).}
+
+\src{\textbf{Output.} Tying the label to the approval-day review schedule means later rescheduling cannot change it. MONA's cancellation flag would be too narrow: only 29 of the 82 interrupted programmes were formally cancelled, while the other 53 ended with reviews outstanding.}
+
+\src{\textbf{Inputs.} Table~\ref{tab:variables} groups the inputs into deal structure, conditionality, track record and macroeconomic conditions.}
+
+% Continue the wide dictionary between predictor groups to avoid an empty page.
+\begin{wordtable}
+\fontsize{9}{11}\selectfont
+\wordtablecaption{tab:variables}{\src{Table \thetable. Input and output variables}}
+\begin{tabularx}{\linewidth}{@{}L{0.20\linewidth}L{0.13\linewidth}L{0.21\linewidth}L{0.16\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\src{Variable} & \src{Group} & \src{Description} & \src{Source} & \src{Why it should help predict}\\
+\midrule
+\src{interrupted} & \src{Output} & \src{1 = fewer reviews completed than scheduled at approval} & \src{MONA Reviews} & \src{The event to predict}\\
+\addlinespace
+\src{log\_access\_pct\_quota} & \src{Deal structure} & \src{Log of agreed access, \% of IMF quota} & \src{Commitments, upon approval} & \src{Larger programmes signal larger problems and raise the stakes at each review}\\
+\addlinespace
+\src{planned\_months} & \src{Deal structure} & \src{Planned length, approval to scheduled expiry} & \src{Commitments, upon approval} & \src{Longer programmes are exposed longer to shocks and changes of government}\\
+\addlinespace
+\src{concessional} & \src{Deal structure} & \src{1 = includes a concessional (PRGT) facility} & \src{Commitments} & \src{Low-income borrowers face different circumstances and incentives}\\
+\addlinespace
+\src{extended} & \src{Deal structure} & \src{1 = EFF or ECF} & \src{Commitments} & \src{Medium-term structural programmes vs. short-term crisis programmes}\\
+\addlinespace
+\src{n\_reviews\_sched} & \src{Deal structure} & \src{Reviews scheduled at approval} & \src{MONA Reviews, R0} & \src{Each review is a point at which the programme can stop}\\
+\addlinespace
+\src{n\_struct\_cond} & \src{Conditionality} & \src{Structural conditions at approval} & \src{MONA Combined, R0} & \src{More reform conditions are harder to meet on time}\\
+\addlinespace
+\src{n\_prior\_actions} & \src{Conditionality} & \src{Prior actions before Board approval} & \src{MONA Combined, R0} & \src{Signals low trust, or commitment already shown}\\
+\addlinespace
+\src{prev\_n\_20y} & \src{Track record} & \src{Programmes in the 20 years before approval} & \src{Commitments history} & \src{Repeated users may have persistent implementation problems}\\
+\addlinespace
+\src{years\_since\_prev} & \src{Track record} & \src{Years since the previous programme's planned end (0 if overlapping)} & \src{Commitments history} & \src{A quick return suggests the previous programme did not solve the problem}\\
+\addlinespace
+\src{no\_track\_record} & \src{Track record} & \src{1 = no earlier programme} & \src{Commitments history} & \src{First-time borrowers have no history with the IMF}\\
+\bottomrule
+\end{tabularx}
+\end{wordtable}
+
+\begin{wordtable}
+\fontsize{9}{11}\selectfont
+\wordcaption{Table~\ref{tab:variables} (continued)}
+\begin{tabularx}{\linewidth}{@{}L{0.20\linewidth}L{0.13\linewidth}L{0.21\linewidth}L{0.16\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+Variable & Group & Description & Source & Why it should help predict\\
+\midrule
+\src{growth} & \src{Macro} & \src{Real GDP growth, \%, staff estimate for the approval year} & \src{MONA Mecon, R0} & \src{A weak economy makes programme targets harder to reach}\\
+\addlinespace
+\src{inflation} & \src{Macro} & \src{CPI inflation, \%, staff estimate for the approval year} & \src{MONA Mecon, R0} & \src{High inflation signals macroeconomic instability}\\
+\addlinespace
+\src{current\_account\_gdp} & \src{Macro} & \src{Current-account balance, \% of GDP} & \src{MONA Mecon, R0} & \src{The size of the external gap the programme must close}\\
+\bottomrule
+\end{tabularx}
+\end{wordtable}
+
+\src{\textbf{Transformations and overlap.} Access enters in logs. Facility type is left out because concessional and extended identify it exactly, and the number of tranches because it is almost always the number of reviews plus one. Some inputs remain correlated (extended with planned\_months, r = 0.77), which does not harm a random forest's predictions.}
+
+\src{\textbf{Excluded variables.} Everything known only after approval is excluded: amounts drawn, completed reviews, actual end dates and later MONA snapshots. Fiscal variables are left out because the WEO has only the revised 2026 data and MONA lacks them for 24–45\% of programmes. Identifiers such as country and approval date are excluded too, since the model should generalise to new programmes. The full list is in the excluded\_variables sheet of the Excel file.}
+
+\src{\textbf{Caveats.} The number of scheduled reviews enters both an input and the outcome definition, so part of its predictive power is mechanical. The macro inputs are staff projections at approval, which may be optimistic but are what was known at the time.}

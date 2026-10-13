@@ -1,0 +1,8 @@
+% Verbatim source: Report/initial/conclusion.docx
+\addsec{\src{Remarks}}
+
+\src{Using 13 predictors available at program approval, we fitted a random forest to predict IMF program interruptions. Country-grouped cross-validation selected 250 trees and three candidate predictors per split. The final model reached a pooled development out-of-fold balanced accuracy of 0.630, but only 0.508 on the 28 later test programs at the selected threshold of 0.51. Scheduled reviews, extended facilities and loan access had the highest estimated permutation importance, although these rankings do not establish causal effects.}
+
+\src{The results are limited by the small test sample, the change in interruption frequency between development and testing, and the use of development validation results for both model and threshold selection. Test classifications are also sensitive to the threshold: moving from 0.50 to 0.51 changes two predictions. Furthermore, scheduled reviews enter the outcome definition, giving their predictive importance a partly mechanical basis.}
+
+\src{Future work could expand the sample, assess performance over additional chronological splits, and investigate richer approval-time indicators of political commitment and institutional capacity. Preprocessing and model selection should be confined to the training portions of validation splits. Until performance is shown to be stable across further samples, this forest is best regarded as an exploratory model rather than a dependable stand-alone signal for sovereign-risk decisions.}

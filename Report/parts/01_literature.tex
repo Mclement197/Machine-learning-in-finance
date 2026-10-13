@@ -1,0 +1,37 @@
+% Verbatim source: Report/initial/1.a) updated.docx
+\addsec{\src{Introduction and literature review}}
+\addsubsec{\src{Introduction and financial relevance}}
+
+\src{The International Monetary Fund (IMF) supports countries facing balance-of-payments difficulties through lending programmes that combine financing with policy commitments and periodic reviews. Approval does not guarantee that the agreed programme will be implemented. We ask whether information available at Board approval can predict whether a programme is later interrupted (see 1b for the outcome definition).}
+
+\src{Interruption matters financially because implementation can affect expected financing and confidence in the government's policy commitments. Mody and Saravia (2006, pp. 843-845, 857) find that IMF programmes do not uniformly improve access to international bond markets; favourable effects depend on credible reform commitments and economic circumstances. Reinsberg et al. (2022, pp. 1023, 1034–1035) associate permanent interruptions with lower institutional investor ratings and a short-lived increase in sovereign bond spreads. These findings motivate studying interruption risk.}
+
+\addsubsec{\src{Political incentives and implementation capacity}}
+
+\src{The implementation literature emphasises the borrowing government's willingness and ability to fulfil its commitments. Ivanova et al. (2003, pp. 4, 34) identify political cohesion, stability and bureaucratic quality as important influences on implementation. Joyce (2006, pp. 342–345, 351) similarly links implementation to government ideological cohesion, regime duration and political and economic openness. Dreher (2003) shows that electoral incentives interact with political institutions and also identifies associations with initial economic vulnerability. Together, these studies suggest that implementation depends on domestic constraints as well as the agreement with the IMF.}
+
+\src{Our 13 inputs do not directly measure elections, political cohesion or bureaucratic quality, so these mechanisms are only partly observed. Programme characteristics may capture some of these borrower differences indirectly.}
+
+\addsubsec{\src{Conditionality and programme design}}
+
+\src{Evidence on conditionality is mixed. Ivanova et al. (2003, pp. 4, 34) find limited explanatory power for conditionality once domestic political factors are considered. Dreher's (2009, pp. 248–250) survey discusses competing arguments about conditions as commitment devices and constraints on implementation. More recently, Reinsberg et al. (2022, pp. 1023, 1026, 1035) find that greater structural conditionality at programme onset is associated with interruption, especially conditions involving public-sector reform, privatisation and price liberalisation.}
+
+\src{We therefore test the initial number of structural conditions and prior actions. Prior actions are measures required before approval, while structural conditions concern reform commitments during the programme. Financing relative to quota, planned duration and scheduled reviews describe further aspects of the arrangement. Concessional and extended-facility indicators distinguish programme types and may capture both design and borrower characteristics.}
+
+\src{The outcome definition also affects interpretation: a programme with more scheduled reviews has more chances to leave one uncompleted, so duration and review counts may predict interruption partly through exposure. Counting conditions also misses their political difficulty and content.}
+
+\addsubsec{\src{Macroeconomic vulnerability and previous IMF use}}
+
+\src{Weak growth, inflation and external financing pressures can make agreed adjustment harder to implement. Iseringhausen et al. (2019, pp. 8, 16, 19, 23–25) find that macroeconomic conditions, institutions and previous IMF experience help explain repeated programme use. Their outcome, however, is a successor arrangement within three years. A country can return to the IMF after successfully completing a programme because it experiences a new shock. Evidence on repeated use therefore suggests candidate predictors, which we test against interruption.}
+
+\src{Our model tests growth, inflation and the current-account balance, using IMF staff estimates or projections recorded at approval. It also includes the number of earlier programmes, time since the preceding programme's planned end and an indicator for no previous track record. These variables summarise economic circumstances and programme history; reserves and direct institutional indicators are absent. We use the approval snapshot because later revisions or realised outcomes would give the model information unavailable at the time of prediction.}
+
+\addsubsec{\src{Machine learning and the research contribution}}
+
+\src{Machine learning already contributes to IMF forecasting. Agbloyor et al. (2023, pp. 1-5) predict IMF bailouts using 6,550 observations and 138 features, reporting predictive information from economic, agricultural, energy, health and social indicators. Batsuuri et al. (2024, pp. 12, 14–18, 22–25) find that machine-learning methods outperform traditional approaches when forecasting new IMF arrangements, with results sensitive to preprocessing and prediction horizon. Both studies predict participation; we predict what happens after a programme is approved.}
+
+\src{Gu et al. (2020, pp. 2223, 2225–2227), in The Review of Financial Studies, demonstrate the value of nonlinearities and interactions in equity-return prediction. This motivates comparing flexible models, although our sample of 173 programmes is far smaller and our target different. Breiman (2001, pp. 5–8, 10–11) provides the basis for random forests, which combine predictions from randomised trees. We compare the random forest with logistic regression, an interpretable benchmark for a binary outcome, and a neural network. The comparison tests whether additional flexibility improves prediction in a small sample.}
+
+\src{Our contribution is a focused predictive test in the sense of Shmueli (2010), discussed in 1b: can the selected approval-time variables classify interruption, and does a random forest improve on logistic regression and a neural network? The literature covers implementation mechanisms, financial consequences and predictors of participation or repeated use, but has not tested this framework.}
+
+\src{We use country-grouped cross-validation within the training sample to tune the random forest and the neural network, and evaluate all models on later programmes approved during 2014–2016. The two checks test different kinds of generalisation: to unseen countries during validation, and to later approvals, which may include countries already in the training data. We report balanced accuracy alongside overall accuracy (see 1b). Coefficients and permutation importance are interpreted as predictive associations, not as causal effects of changing programme characteristics.}

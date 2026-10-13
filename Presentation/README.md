@@ -145,4 +145,5 @@ corrections and clarifications:
   the always-interrupted rule.
 
 Spelling, decimal separators and programme terminology are made consistent.
-The title, six authors, university and presentation date are retained.
+The title, university and presentation date are retained. The seven-author list
+includes Federico Marcelli.

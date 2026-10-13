@@ -1,0 +1,22 @@
+% Source: Report/initial/1b 1c reviewed.docx; exercise prefixes removed from headings.
+\addsec{\src{Study goal}}
+
+\src{We test whether approval-day information can predict if an International Monetary Fund (IMF) programme will be interrupted. The unit of observation is one lending programme. The prediction is made at Board approval, using only data known on that date.}
+
+\src{This is a supervised binary classification task. The output, interrupted, equals 1 when fewer reviews were completed than scheduled at approval. It equals 0 when every scheduled review was completed. The inputs are 13 variables in four groups. These are deal design, conditionality, IMF track record, and macroeconomic conditions. Section 1g lists them.}
+
+\src{Following James et al. (2013, pp. 16-17), we estimate f in Pr(Y = 1 | X) = f(X). The estimate is judged on programmes it has not seen during training. Following Shmueli (2010, p. 291), we treat this as a prediction problem. Coefficients and variable importance are not read as causal effects.}
+
+\src{Performance is measured on a later test set. We report accuracy and balanced accuracy, the mean of the hit rates on both classes. Interruptions are the majority in the test set (see 1d). A rule that always predicts interruption therefore gets high accuracy. Its balanced accuracy is only .50. Plain accuracy misleads when classes are unequal (He \& Garcia, 2009, p. 1276). Balanced accuracy removes this advantage. Models are tuned on balanced accuracy for the same reason.}
+
+\src{The IMF pays its financing in tranches. Each tranche after the first requires the Board to complete a scheduled review (IMF, n.d.). The review checks the quantitative targets and structural conditions agreed at approval. When a review is not completed, the next disbursement is withheld. The country then loses financing the programme had scheduled. An approval-day flag could inform programme design at the IMF and risk assessment by creditors.}
+
+\addsec{\src{Study design and data collection}}
+
+\src{The study is a cross-section of IMF programmes. Each row is one programme, described as it stood at approval. We keep facilities with scheduled reviews, including their predecessors. These are the Stand-By Arrangement (SBA), the Extended Fund Facility (EFF), the Extended Credit Facility (ECF), and the Standby Credit Facility (SCF). Facilities without reviews and precautionary arrangements are dropped (see 1d). Approvals run from 2002 to 2016. Review records in the Monitoring of Fund Arrangements (MONA) database start in 2002. Ending the window in 2016 limits overlap with the COVID-19 period.}
+
+\src{No single public source records programme design and review outcomes together. We therefore built the dataset from IMF files. The IMF Financial Data Query Tool gives the history of lending arrangements (IMF, 2026a). It provides dates, facility type, and access in percent of quota at approval. MONA covers reviews, conditions, and staff macro estimates (IMF, 2026b). We use four MONA files. Reviews lists scheduled and completed reviews, from which we build the output. Combined lists structural conditions and prior actions. Mecon holds staff estimates of growth, inflation, and the current account. Description holds a cancellation flag, used only to check the output. We also downloaded the April 2026 World Economic Outlook (WEO; IMF, 2026c). We also used the World Bank's World Development Indicators (WDI; World Bank, 2026). The final macro inputs come from MONA; Section 1g explains why.}
+
+\src{The commitments file and MONA share no common identifier. Country names are spelled differently, and approval dates can differ by a few days. We normalise country names and match on the closest approval date within 60 days. Blends approved for the same country on the same day become one programme. They share one review schedule. Section 1d reports the resulting sample.}
+
+\src{We split the sample by approval year. Training covers 2002 to 2013, and the test set covers 2014 to 2016. The test programmes are never used to fit or tune the models. All inputs are taken as they stood on approval day (see 1g). Hyperparameters are tuned on the training set with 10-fold cross-validation and leave-one-out cross-validation (LOOCV). A third scheme holds out whole countries in each fold. Many countries have several programmes, so random folds put one country on both sides. We use the country-grouped scores to choose the tuned settings for the random forest and the neural network.}

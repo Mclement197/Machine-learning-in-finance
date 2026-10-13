@@ -1,0 +1,14 @@
+# Local source drafts are not needed to build the report.
+/initial/
+
+# LaTeX intermediates; keep report.tex, parts/*.tex and report.pdf.
+/*.aux
+/*.bbl
+/*.blg
+/*.fdb_latexmk
+/*.fls
+/*.log
+/*.out
+/*.synctex.gz
+/*.toc
+/*.xdv

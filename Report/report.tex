@@ -1,0 +1,119 @@
+% !TeX program = xelatex
+% Build: latexmk -xelatex -interaction=nonstopmode -halt-on-error -file-line-error -cd Report/report.tex
+% Design: the supplied Basic Academic Journal Article Template (olplainarticle).
+% Word sources are transcribed into parts/; neither Word files nor the ZIP are
+% required to compile. The bibliography is followed by the list of aids and
+% the declaration of authorship with blank signature fields.
+\documentclass[fleqn,11pt]{olplainarticle}
+% Retain the template's asymmetric journal margins, on A4 rather than US letter.
+\geometry{a4paper,headheight=14pt}
+\usepackage{fontspec}
+\setmainfont{texgyretermes}[
+  Extension=.otf,UprightFont=*-regular,ItalicFont=*-italic,
+  BoldFont=*-bold,BoldItalicFont=*-bolditalic,Ligatures=NoCommon,Mapping=]
+\setsansfont{texgyreheros}[
+  Extension=.otf,UprightFont=*-regular,ItalicFont=*-italic,
+  BoldFont=*-bold,BoldItalicFont=*-bolditalic,Ligatures=NoCommon,Mapping=]
+\setmonofont{lmmono10-regular.otf}[Scale=MatchLowercase]
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{tabularx,array}
+\usepackage{xurl}
+\usepackage{hyperref}
+\definecolor{HSGGreen}{HTML}{00843D}
+\hypersetup{
+  pdftitle={Reading IMF Programmes on Day One},
+  pdfauthor={Mathis Clément; Ethan Moore; Ali Haidar; Tristan Zemp; Joao Matteo Pisaturo; José Pablo Caldas; Federico Marcelli},
+  pdfsubject={Approval-time prediction of IMF programme interruptions},
+  colorlinks=true,linkcolor=color1,citecolor=color1,urlcolor=HSGGreen
+}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.24}
+\setlength{\parskip}{4pt plus 1pt minus 1pt}
+\setlength{\emergencystretch}{2em}
+\setlength{\skip\footins}{12pt plus 2pt minus 1pt}
+\titlespacing*{\section}{0pt}{20pt plus 3pt minus 2pt}{9pt plus 2pt minus 1pt}
+\titlespacing*{\subsection}{0pt}{14pt plus 2pt minus 1pt}{6pt plus 1pt}
+\titlespacing*{\subsubsection}{0pt}{12pt plus 2pt minus 1pt}{5pt plus 1pt}
+\widowpenalty=10000
+\clubpenalty=10000
+\raggedbottom
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% Identity wrappers retain source text for fidelity checks.
+\newcommand{\src}[1]{#1}
+\newcommand{\srcnote}[1]{#1}
+\newcommand{\addsec}[1]{\section*{#1}\phantomsection\addcontentsline{toc}{section}{#1}}
+\newcommand{\addsubsec}[1]{\subsection*{#1}\phantomsection\addcontentsline{toc}{subsection}{#1}}
+\newcommand{\wordcaption}[1]{\par\addvspace{6pt}{\noindent\sffamily\small\color{color1}#1\par}\addvspace{6pt}}
+\newcommand{\wordtablecaption}[2]{%
+  \refstepcounter{table}\label{#1}%
+  \wordcaption{#2}}
+\newenvironment{wordtable}{%
+  \par\addvspace{10pt}\setlength{\parfillskip}{0pt plus 1fil}%
+  \noindent\begin{minipage}{\linewidth}\singlespacing\small
+  \setlength{\parskip}{0pt}\setlength{\parindent}{0pt}%
+}{\end{minipage}\par\addvspace{10pt}}
+\newenvironment{wordreferences}{%
+  \begingroup\singlespacing\small\setlength{\parskip}{5pt}%
+  \setlength{\parindent}{0pt}\everypar{\hangindent=1em\hangafter=1}%
+}{\par\endgroup}
+\newcommand{\signaturefield}[1]{%
+  \parbox[t]{\linewidth}{%
+    \singlespacing\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}%
+    \vspace*{14mm}\hrule height 0.4pt\vspace{2mm}%
+    {\small #1\par}%
+  }}
+
+\title{Reading IMF Programmes on Day One}
+\author{\mbox{Mathis Clément}}
+\author{\mbox{Ethan Moore}}
+\author{\mbox{Ali Haidar}}
+\author{\mbox{Tristan Zemp}}
+\author{\mbox{Joao Matteo Pisaturo}}
+\author{\mbox{José Pablo Caldas}}
+\author{\mbox{Federico Marcelli}}
+\affil{University of St. Gallen}
+\date{Machine Learning in Finance\enspace\textbullet\enspace Autumn 2026}
+\renewcommand\Authfont{\normalfont\sffamily\bfseries\fontsize{11}{14}\selectfont}
+\renewcommand\Affilfont{\normalfont\sffamily\fontsize{10}{12}\selectfont}
+\setlength{\affilsep}{6pt}
+
+% Adapt the template's compact article title block to the supplied material.
+% There is no supplied abstract/keyword text, so those sample slots are omitted.
+\makeatletter
+\renewcommand{\@maketitle}{%
+  \begingroup\singlespacing
+  \noindent\includegraphics[width=38mm]{../Presentation/figures/hsg_logo.png}\par
+  \vspace{10pt}
+  {\raggedright\sffamily\bfseries\fontsize{20}{25}\selectfont\@title\par}
+  \vspace{5pt}
+  {\raggedright\sffamily\fontsize{11}{14}\selectfont
+    Predicting programme interruptions with approval-time information\par}
+  \vspace{12pt}
+  {\raggedright\sffamily\fontsize{11}{14}\selectfont\@author\par}
+  \vspace{5pt}
+  {\raggedright\sffamily\small\@date\par}
+  \vspace{16pt}
+  \endgroup
+}
+\makeatother
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\input{parts/01_literature}
+\input{parts/02_study_design}
+\input{parts/03_data}
+\input{parts/04_random_forest}
+\input{parts/05_logistic_regression}
+\input{parts/06_neural_network}
+\clearpage
+\input{parts/07_conclusion}
+\clearpage
+\input{bibliography}
+\clearpage
+\input{parts/08_list_of_aids}
+\clearpage
+\input{parts/09_declaration_of_authorship}
+\end{document}
