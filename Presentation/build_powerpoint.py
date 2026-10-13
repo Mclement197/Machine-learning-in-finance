@@ -268,7 +268,7 @@ def build():
     prs.core_properties.subject = "Approval-time prediction of IMF programme interruptions"
     prs.core_properties.author = (
         "Mathis Clément; Ethan Moore; Ali Haidar; Tristan Zemp; "
-        "Joao Matteo Pisaturo; José Pablo Caldas"
+        "Joao Matteo Pisaturo; José Pablo Caldas; Federico Marcelli"
     )
     prs.core_properties.keywords = "IMF; machine learning; University of St. Gallen"
     prs.core_properties.comments = "Editable PowerPoint counterpart of Presentation/presentation.tex."
@@ -281,12 +281,12 @@ def build():
     text(s, 0.77, 2.02, 9.13, 1.45, "Reading IMF Programs\non Day One", 40, True)
     text(s, 0.77, 3.83, 9.05, 0.90,
          "Machine learning on 173 IMF lending programmes\n2002–2016", 20)
-    for x, first, second in (
-        (0.77, "Mathis Clément", "Tristan Zemp"),
-        (3.15, "Ethan Moore", "Joao Matteo Pisaturo"),
-        (6.24, "Ali Haidar", "José Pablo Caldas"),
+    for x, authors in (
+        (0.77, "Mathis Clément\nTristan Zemp\nFederico Marcelli"),
+        (3.15, "Ethan Moore\nJoao Matteo Pisaturo"),
+        (6.24, "Ali Haidar\nJosé Pablo Caldas"),
     ):
-        text(s, x, 5.66, 3.0, 0.69, f"{first}\n{second}", 14.5)
+        text(s, x, 5.66, 3.0, 0.85, authors, 14.5)
     text(s, 0.77, 6.67, 9.0, 0.30, "University of St. Gallen  •  7 October 2026", 14, fill=MUTED)
     metric(s, 10.70, 1.52, 2.22, "173", "Programmes", "2002–2016", 43)
     metric(s, 10.70, 3.44, 2.22, "13", "Predictors", "Known at approval", 43)

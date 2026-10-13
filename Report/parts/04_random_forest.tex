@@ -1,0 +1,78 @@
+% Verbatim source: Report/initial/ML paper (4).docx
+\addsec{\src{Random Forest}}
+
+\src{The first model that is used is a random forest. As our study is a prediction through classification, using random forest first appeared as being a promising tool (Batsuuri et al., 2024, p. 3). This model combines many classification trees, each splitting the data through a series of simple yes/no questions.}
+
+\src{A single tree captures nonlinear patterns and interactions, but it is unstable: small changes in the data can produce a very different tree. For this reason, we use bagging (bootstrap aggregation). The idea is to grow many trees, each on a bootstrap sample (programs drawn with replacement), and average their votes. Averaging helps to cancel out noisy predictions. However, bagging alone has a weakness. If one feature is very strong, almost every tree will split on it first, making the trees similar, which limits the gain from averaging (James et al., 2013, p. 320). Indeed, Hastie et al. (2009, p. 588) formalized it with the variance of an average of B trees, each with variance σ² and pairwise correlation ρ:}
+
+\begin{center}
+\textbf{\src{Var = ρσ² + (1 − ρ)σ² / B}}
+\end{center}
+
+\src{More trees (B) shrink the second term, but the first term only shrinks with less correlated trees. We use Breiman’s (2001, p. 6) solution of limiting the features available at each split to a random subset of \emph{mtry} inputs. Each tree then votes: the share of trees voting “interrupted” gives the predicted probability, and a threshold assigns the class. The programs left out of each bootstrap sample (out-of-bag) provide a built-in error estimate.}
+
+\src{The default random forest was trained with the \emph{randomForest} R library default hyperparameters: 500 trees, \emph{mtry} 3. The OOB balanced accuracy scored 0.609.}
+
+\src{To tune our hyperparameters (number of trees and \emph{mtry}), we scored 24 different pairs on balanced accuracy, ranging from 100 to 1000 trees and \emph{mtry} from 2 to 12 with the caret package. Balanced accuracy is the average of two hit rates: the share of interrupted programs the model catches and the share of completed programs it catches. A model that always predicts the same outcome scores 0.50, whatever the class shares.}
+
+\src{We used three different cross-validation schemes: 10-fold CV, LOOCV, and 10-fold CV by country. The last is our main measurement, as it keeps all programs of a country in the same fold, so the forest is never scored on a country it was trained on.}
+
+\src{Balanced accuracy served as our metric of choice because the classes are unequal and shift between development and test sets. For 10-fold CV and country CV, we compute it within each fold and average over the ten folds; for LOOCV, where each fold holds a single program, we compute it once over all out-of-fold predictions.}
+
+\begin{wordtable}
+\begin{tabularx}{\linewidth}{@{}XrXr@{}}
+\toprule
+\textbf{\src{Validation}} & \textbf{\src{Default forest}} & \textbf{\src{Tuned pair}} & \textbf{\src{Tuned forest}}\\
+\midrule
+\src{Out-of-bag (default)} & \src{0.609} & \src{-} & \src{-}\\
+\src{10-fold CV} & \src{0.623} & \src{250 trees, mtry 2} & \src{0.657}\\
+\src{10-fold CV by country} & \src{0.597} & \src{250 trees, mtry 3} & \src{0.620}\\
+\src{LOOCV} & \src{0.606} & \src{100 trees, mtry 8} & \src{0.635}\\
+\bottomrule
+\end{tabularx}
+\wordtablecaption{tab:rf-tuning}{\src{Table \thetable. Default against tuned forest, development set (balanced accuracy)}}
+\end{wordtable}
+
+\src{The default pair (500, 3) is part of the tuning grid, so its CV scores come from the same runs. Out-of-bag accuracy of the default forest is 0.628.}
+
+\src{Country CV gives the lowest scores (best 0.620, against 0.657 for 10-fold CV and 0.635 for LOOCV), as expected, since the forest is never tested on a country it has seen. We still select it because programs of the same country share many features, so scoring the forest on countries it was trained on would flatter the result; country CV gives the most conservative estimate.}
+
+\src{We keep the pair chosen under country CV (250 trees, mtry 3), refit it on all 145 development programs with the threshold that maximises out-of-fold balanced accuracy (0.51), and predict the 28 test programs once.}
+
+\begin{wordtable}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}XL{0.115\linewidth}L{0.12\linewidth}L{0.12\linewidth}L{0.13\linewidth}r@{}}
+\toprule
+\textbf{\src{Model}} & \textbf{\src{Accuracy}} & \textbf{\src{Sensitivity}} & \textbf{\src{Specificity}} & \textbf{\src{Balanced accuracy}} & \textbf{\src{AUC}}\\
+\midrule
+\src{Always “interrupted”} & \src{0.607} & \src{1.000} & \src{0.000} & \src{0.500} & \src{0.500}\\
+\addlinespace
+\src{Default forest (threshold 0.50)} & \src{0.571} & \src{0.588} & \src{0.545} & \src{0.567} & \src{0.620}\\
+\addlinespace
+\src{Final forest: 250 trees, mtry 3 (threshold 0.51)} & \src{0.500} & \src{0.471} & \src{0.545} & \src{0.508} & \src{0.586}\\
+\addlinespace
+\src{Final forest, dev OOF} & \src{0.641} & \src{0.523} & \src{0.738} & \src{0.630} & \src{0.631}\\
+\addlinespace
+\src{Final forest threshold 0.50 (for comparison with other models)}\footnotemark[1] & \src{0.571} & \src{0.588} & \src{0.545} & \src{0.567} & \src{0.586}\\
+\bottomrule
+\end{tabularx}
+\wordtablecaption{tab:rf-results}{\src{Table \thetable. Final model and predictions, test set (28 programs, 2014 to 2016)}}
+\end{wordtable}
+\footnotetext[1]{\srcnote{The 0.50 row uses the same threshold as the other models, for a like-for-like comparison; it differs from 0.51 only because two interrupted programs sit at a vote share of 0.504.}}
+
+\src{On the 28 test programs, the final forest reaches a balanced accuracy of 0.508, barely above the 0.500 of always predicting “interrupted”, and its accuracy (0.500) is even below that rule’s (0.607), which shows why plain accuracy misleads when classes are unequal. Out of fold, it reaches 0.630; this is more precise than the test score but slightly optimistic, since both the pair and the threshold were chosen on these predictions. It also differs from Table~\ref{tab:rf-tuning}’s 0.620 because it pools all predictions at the chosen threshold (0.51) instead of averaging folds at 0.50. The default forest scores 0.567 on test, but the gap comes entirely from two interrupted programs with a vote share of 0.504, classified as completed at 0.51: at 0.50, the final forest scores the same 0.567. On the test set, one extra correct prediction moves balanced accuracy by 0.03 to 0.05. The forest thus finds a modest signal in development, but no reliable advantage over chance on later programs.}
+
+\src{Random forests are considered black-box models because hundreds of trees cannot be read directly. However, predictor contribution is still identifiable, as explained in the section detailing permutation importance.}
+
+\addsubsec{\src{Permutation importance}}
+
+\src{This method shuffles the values of each predictor among the out-of-bag samples, breaking its link with the target, and measures the resulting drop in accuracy, averaged over all trees. Higher values mean higher predictive power, while small or negative values signal no contribution. The mean decrease in accuracy (MDA) is one of the two importance measures in randomForest, the other being the mean decrease in Gini impurity (Abedin et al., 2021, p. 23). Importance indicates neither direction nor causality, and correlated predictors (\emph{extended} and \emph{concessional}) share credit.}
+
+\begin{wordtable}
+\centering
+\includegraphics[width=0.82\linewidth]{../Presentation/figures/rf_importance.png}
+\wordcaption{\src{Figure X: Permutation Importance}}
+\end{wordtable}
+
+\src{The number of scheduled reviews is the strongest predictor of interruption: 85\% of development programs with eight or more reviews were interrupted, against 36\% of the others. Part of this is mechanical, as each extra review is one more chance to miss one. Program length itself predicts little, even though Reinsberg et al. (2022, p. 1028) find that longer agreements fail more often. Extended facilities come second, with 38\% of extended programs interrupted against 60\% of the others, in line with the IMF’s review: “EFF and EFF-ECF arrangements, generally longer in duration than SBAs, had higher completion rates” (IMF, 2019, p. 45). Loan size ranks third and prior actions fourth (48\% interrupted with at least one prior action, against 37\% without), in line with the IMF’s finding of “a negative association between PAs at arrangement approval and completion rates” (IMF, 2019, p. 45).}
+
+\src{Growth and inflation add no predictive value, consistent with regression studies that find initial economic conditions largely insignificant (Ivanova et al., 2003, p. 1; Reinsberg et al., 2022, p. 1028). The literature disagrees on conditionality: Reinsberg et al. (2022, p. 1028) find that structural conditions raise the risk of interruption, while Ivanova et al. (2003, p. 1) find no material effect. Our forest is closer to the latter, as the number of structural conditions adds no predictive value.}
