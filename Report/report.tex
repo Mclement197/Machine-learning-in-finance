@@ -1,10 +1,11 @@
 % !TeX program = xelatex
 % Build: latexmk -xelatex -interaction=nonstopmode -halt-on-error -file-line-error -cd Report/report.tex
-% Design: the supplied Basic Academic Journal Article Template (olplainarticle).
+% Body layout: the supplied Basic Academic Journal Article Template (olplainarticle).
+% Cover layout: the authors' supplied University of St. Gallen example.
 % Word sources are transcribed into parts/; neither Word files nor the ZIP are
 % required to compile. The bibliography is followed by the list of aids and
-% the declaration of authorship with blank signature fields.
-\documentclass[fleqn,11pt]{olplainarticle}
+% the declaration of authorship.
+\documentclass[11pt]{olplainarticle}
 % Author-requested symmetric 2 cm side margins on A4.
 \geometry{a4paper,left=2cm,right=2cm,headheight=14pt}
 \usepackage{fontspec}
@@ -27,6 +28,8 @@
   pdfsubject={Approval-day prediction of conditional lending programme interruptions},
   colorlinks=true,linkcolor=color1,citecolor=color1,urlcolor=HSGGreen
 }
+% Show only the current page number in the footer.
+\rfoot{\small\sffamily\bfseries\thepage}
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.24}
 \setlength{\parskip}{4pt plus 1pt minus 1pt}
@@ -58,43 +61,62 @@
   \begingroup\singlespacing\small\setlength{\parskip}{5pt}%
   \setlength{\parindent}{0pt}\everypar{\hangindent=1em\hangafter=1}%
 }{\par\endgroup}
-\newcommand{\signaturefield}[1]{%
-  \parbox[t]{\linewidth}{%
-    \singlespacing\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}%
-    \vspace*{14mm}\hrule height 0.4pt\vspace{2mm}%
-    {\small #1\par}%
-  }}
 
 \title{Can Approval-Day Information Predict Interruptions of Conditional Lending Programmes?}
-\author{\mbox{Mathis Clément}}
-\author{\mbox{Ethan Moore}}
-\author{\mbox{Ali Haidar}}
-\author{\mbox{Tristan Zemp}}
-\author{\mbox{Joao Matteo Pisaturo}}
-\author{\mbox{José Pablo Caldas}}
-\author{\mbox{Federico Marcelli}}
+\newcommand{\reportauthors}{%
+  Mathis Clément\par
+  Ethan Moore\par
+  Ali Haidar\par
+  Tristan Zemp\par
+  Joao Matteo Pisaturo\par
+  José Pablo Caldas\par
+  Federico Marcelli\par}
+\author{\reportauthors}
 \affil{University of St. Gallen}
-\date{Machine Learning in Finance\enspace\textbullet\enspace 14 October 2026}
-\renewcommand\Authfont{\normalfont\sffamily\bfseries\fontsize{11}{14}\selectfont}
-\renewcommand\Affilfont{\normalfont\sffamily\fontsize{10}{12}\selectfont}
-\setlength{\affilsep}{6pt}
+\date{Wednesday, 14 October 2026}
+\newcommand{\reportcourse}{5,155,1.00 Machine Learning in Finance}
+\newcommand{\reportinstructor}{Prof. Dr. Despoina Makariou}
+\newcommand{\reportgroup}{6}
 
-% Adapt the template's compact article title block to the supplied material.
-% There is no supplied abstract/keyword text, so those sample slots are omitted.
+% Standalone cover following the supplied example.
 \makeatletter
-\renewcommand{\@maketitle}{%
-  \begingroup\singlespacing
-  \noindent\includegraphics[width=38mm]{../Presentation/figures/hsg_logo.png}\par
-  \vspace{10pt}
-  {\raggedright\sffamily\bfseries\fontsize{20}{25}\selectfont\@title\par}
-  \vspace{5pt}
-  {\raggedright\sffamily\fontsize{11}{14}\selectfont
-    A Comparison of Random Forests, Logistic Regression and Neural Networks\par}
-  \vspace{12pt}
-  {\raggedright\sffamily\fontsize{11}{14}\selectfont\@author\par}
-  \vspace{5pt}
-  {\raggedright\sffamily\small\@date\par}
-  \vspace{16pt}
+\renewcommand{\maketitle}{%
+  \begingroup
+  \thispagestyle{empty}
+  \singlespacing\normalfont
+  \setlength{\parindent}{0pt}\setlength{\parskip}{0pt}
+  \vspace*{-5mm}
+  {\centering
+    % Crop the symbol from the existing 788 x 170 px, 96 dpi HSG wordmark.
+    \includegraphics[height=19mm,viewport=0 0 116 128,clip]{../Presentation/figures/hsg_logo.png}\par
+    \vspace{4mm}
+    {\bfseries\fontsize{24}{28}\selectfont University of St. Gallen\par}
+    \vspace{4mm}
+    {\fontsize{11}{18}\selectfont
+      University of Business, Economics, Law, Social Sciences, International Affairs and\\
+      Computer Science (HSG)\par}
+  }
+  \vspace{10mm}
+  \hrule height 0.4pt
+  \vspace{4mm}
+  {\centering
+    {\fontsize{18}{27}\selectfont\@title\par}
+    \vspace{4mm}
+    {\fontsize{11}{15}\selectfont
+      A Comparison of Random Forests, Logistic Regression and Neural Networks\par}
+  }
+  \vspace{5mm}
+  \hrule height 0.4pt
+  \vspace{28mm}
+  {\fontsize{12}{18}\selectfont
+    \renewcommand{\arraystretch}{1}
+    \begin{tabularx}{\linewidth}{@{}>{\bfseries}L{48mm}@{\hspace{5mm}}>{\raggedright\arraybackslash}X@{}}
+      Course: & \reportcourse\\[10mm]
+      Instructor: & \reportinstructor\\[10mm]
+      Submission date: & \@date\\[10mm]
+      Group \reportgroup: & {\fontsize{12}{20}\selectfont\reportauthors}\\
+    \end{tabularx}\par
+  }
   \endgroup
 }
 \makeatother
@@ -102,6 +124,7 @@
 \begin{document}
 \maketitle
 \thispagestyle{empty}
+\clearpage
 \tableofcontents
 \clearpage
 \input{parts/01_literature}

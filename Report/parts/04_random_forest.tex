@@ -17,10 +17,11 @@
 
 \src{\textbf{Hyperparameter tuning.} To tune our hyperparameters (number of trees and \emph{mtry}), we scored 24 different pairs on balanced accuracy (Section~\ref{sec:prediction-task}), ranging from 100 to 1000 trees and \emph{mtry} from 2 to 12, with the \emph{caret} package (Kuhn, 2008).}
 
-\src{We used three different cross-validation schemes: 10-fold CV, LOOCV and country-grouped 10-fold CV (country CV, Section~\ref{sec:data-sources}). The last is our main measurement, as it keeps all programmes of a country in the same fold, so the forest is never scored on a country it was trained on.}
+\src{We used three different cross-validation schemes: 10-fold CV, LOOCV and country-grouped 10-fold CV (country CV, Section~\ref{sec:data-sources}).}
 
 \src{For 10-fold CV and country CV, we compute balanced accuracy within each fold and average over the ten folds; for LOOCV, where each fold holds a single programme, we compute it once over all out-of-fold predictions. Table~\ref{tab:rf-tuning} compares the default forest with the best pair under each scheme.}
 
+\begin{table}[htbp]
 \begin{wordtable}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}XL{0.22\linewidth}>{\raggedright\arraybackslash}XL{0.22\linewidth}@{}}
 \toprule
@@ -34,13 +35,15 @@
 \end{tabularx}
 \wordtablecaption{tab:rf-tuning}{\src{Table \thetable. Default against tuned forest on the training set (balanced accuracy; best of 24 pairs per scheme)}}
 \end{wordtable}
+\end{table}
 
 \src{The default pair (500, 3) is part of the tuning grid, so its CV scores come from the same runs. OOB accuracy of the default forest is 0.628.}
 
-\src{Country CV gives the lowest best score (0.620, against 0.657 for 10-fold CV and 0.635 for LOOCV), as expected, since the forest is never tested on a country it has seen. We still select it because it guards against within-country dependence (Section~\ref{sec:data-sources}), although 26 of the 28 test programmes come from countries seen in training, so it does not imitate the later-period test.}
+\src{Country CV gives the lowest best score (0.620, against 0.657 for 10-fold CV and 0.635 for LOOCV).}
 
 \src{\textbf{Final model.} We keep the pair chosen under country CV (250 trees, \emph{mtry} 3), refit it on all 145 training programmes with the threshold that maximises out-of-fold balanced accuracy (0.51), and predict the 28 test programmes once (Table~\ref{tab:rf-results}). The selected pair keeps the default \emph{mtry} and only lowers the number of trees from 500 to 250, which cannot be expected to improve accuracy, so its gain over the default under country CV (0.620 against 0.597) most likely reflects noise in a search over 24 pairs. Only the test-set rows of Table~\ref{tab:rf-results} measure out-of-sample performance; the other figures in Tables~\ref{tab:rf-tuning} and~\ref{tab:rf-results} are training-set estimates used to choose settings.}
 
+\begin{table}[htbp]
 \begin{wordtable}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}XL{0.115\linewidth}L{0.12\linewidth}L{0.12\linewidth}L{0.13\linewidth}r@{}}
 \toprule
@@ -52,30 +55,46 @@
 \addlinespace
 \src{Final forest (threshold 0.51)} & \src{0.500} & \src{0.471} & \src{0.545} & \src{0.508} & \src{0.586}\\
 \addlinespace
-\src{Final forest (threshold 0.50)}\footnotemark[1] & \src{0.571} & \src{0.588} & \src{0.545} & \src{0.567} & \src{0.586}\\
+\src{Final forest (threshold 0.50)} & \src{0.571} & \src{0.588} & \src{0.545} & \src{0.567} & \src{0.586}\\
 \midrule
 \src{Final forest, training out-of-fold (\emph{n} = 145, threshold 0.51)} & \src{0.641} & \src{0.523} & \src{0.738} & \src{0.630} & \src{0.631}\\
 \bottomrule
 \end{tabularx}
 \wordtablecaption{tab:rf-results}{\src{Table \thetable. Random forest on the test set (28 programmes, 2014–2016), with the final forest’s training out-of-fold scores for reference}}
+{\footnotesize\srcnote{Note. Final forest: 250 trees, \emph{mtry} 3. The 0.50 row uses the same threshold as the logistic regression, for a like-for-like comparison; it differs from 0.51 only because two interrupted programmes sit at a vote share of 0.504. The last row is computed on the 145 training programmes, not on the test set.}\par}
 \end{wordtable}
-\footnotetext[1]{\srcnote{Note. Final forest: 250 trees, \emph{mtry} 3. The 0.50 row uses the same threshold as the logistic regression, for a like-for-like comparison; it differs from 0.51 only because two interrupted programmes sit at a vote share of 0.504. The last row is computed on the 145 training programmes, not on the test set.}}
+\end{table}
 
-\src{\textbf{Out-of-sample predictions.} On the 28 test programmes, the final forest reaches a balanced accuracy of 0.508, barely above the 0.500 of always predicting “interrupted”, and its accuracy (0.500) is even below that rule’s (0.607); the rule’s high accuracy despite zero skill shows why plain accuracy misleads when classes are unequal. Out of fold on the training set, it reaches 0.630; this is more precise than the test score but slightly optimistic, since both the pair and the threshold were chosen on these predictions. It differs from the 0.620 in Table~\ref{tab:rf-tuning} because that figure averages balanced accuracy over ten folds at threshold 0.50, whereas 0.630 pools all out-of-fold predictions at threshold 0.51. The default forest’s higher test balanced accuracy (0.567 against 0.508) comes entirely from two interrupted programmes with a vote share of 0.504: they are classed as interrupted at threshold 0.50 but as completed at 0.51, and at 0.50 the final forest also scores 0.567. The default forest also ranks programmes better (AUC 0.620 against 0.586), so tuning did not improve the test results on either measure. On the test set, one extra correct prediction moves balanced accuracy by about 0.03 to 0.05. The forest thus finds a modest signal in the training set, but no reliable advantage over chance on later programmes.}
-
-\src{Random forests are considered black-box models because hundreds of trees cannot be read directly. However, the contribution of each input can still be measured, as explained in Section~\ref{sec:importance}.}
+\src{\textbf{Out-of-sample predictions.} On the 28 test programmes, the final forest reaches a balanced accuracy of 0.508, barely above the 0.500 of always predicting “interrupted”, and its accuracy (0.500) is even below that rule’s (0.607); the rule’s high accuracy despite zero skill shows why plain accuracy misleads when classes are unequal. Out of fold on the training set, it reaches 0.630; this is more precise than the test score but slightly optimistic, since both the pair and the threshold were chosen on these predictions. The default forest’s higher test balanced accuracy (0.567 against 0.508) comes entirely from two interrupted programmes with a vote share of 0.504: they are classed as interrupted at threshold 0.50 but as completed at 0.51, and at 0.50 the final forest also scores 0.567. The default forest also ranks programmes better (AUC 0.620 against 0.586), so tuning did not improve the test results on either measure. On the test set, one extra correct prediction moves balanced accuracy by about 0.03 to 0.05. The forest thus finds a modest signal in the training set, but no reliable advantage over chance on later programmes.}
 
 \subsection{\src{Variable importance}}\label{sec:importance}
 
 \src{Permutation importance shuffles the values of each input among the out-of-bag samples, breaking its link with the target, and measures the resulting drop in accuracy, averaged over all trees. Higher values mean higher predictive power, while small or negative values signal no contribution. The mean decrease in accuracy (MDA) is one of the two importance measures in \emph{randomForest}, the other being the mean decrease in Gini impurity (Abedin et al., 2021, p. 23). Importance indicates neither direction nor causality, and correlated inputs (the extended and concessional indicators) share credit.}
 
-\begin{wordtable}
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{../Presentation/figures/rf_importance.png}
+% Equal image heights preserve aspect ratios and align both caption baselines.
+% Reserve two caption lines so the explanatory notes also start at the same height.
+\begin{minipage}[t]{0.48\textwidth}
+\singlespacing\small\upshape\raggedright\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}
+\vspace{0pt}
+{\centering\includegraphics[height=60mm,width=\linewidth,keepaspectratio]{../Presentation/figures/rf_importance.png}\par}
 \refstepcounter{figure}\label{fig:rf-importance}
-\wordcaption{\src{Figure \thefigure. Permutation importance of the final forest: mean decrease in out-of-bag accuracy when one input is shuffled (higher values mean more important; values near or below zero mean no contribution)}}
-\end{wordtable}
+\wordcaption{\parbox[t][2\baselineskip][t]{\linewidth}{\raggedright
+\src{Figure \thefigure. Permutation importance of the final forest.}}}
+{\footnotesize\srcnote{Note. Mean decrease in out-of-bag accuracy when one input is shuffled. Higher values mean more important; values near or below zero mean no contribution.}\par}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\singlespacing\small\upshape\raggedright\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}
+\vspace{0pt}
+{\centering\includegraphics[height=60mm,width=\linewidth,keepaspectratio]{../Presentation/figures/logit_coefficients.png}\par}
+\refstepcounter{figure}\label{fig:logit-coefficients}
+\wordcaption{\parbox[t][2\baselineskip][t]{\linewidth}{\raggedright
+\src{Figure \thefigure. Logistic regression coefficients for programme interruption.}}}
+{\footnotesize\srcnote{Note. Coefficients are in log-odds and estimated on the training set. Positive values indicate higher odds of interruption. Inputs are on different scales, so bar lengths are not directly comparable measures of importance. Extended and concessional are strongly correlated (\emph{r} = 0.81).}\par}
+\end{minipage}
+\end{figure}
 
-\src{The number of scheduled reviews is the strongest input (Figure~\ref{fig:rf-importance}): 85\% of training programmes with eight or more reviews were interrupted, against 36\% of the others. Part of this is mechanical, as each extra review is one more chance to miss one (Section~\ref{sec:variables}). Because this link is partly built into the outcome, the forest’s training-set signal should be read as an upper bound on what approval-day information reveals about implementation. Programme length receives little importance on its own because it overlaps with the extended indicator (\emph{r} = 0.77); within each facility type, longer training programmes were interrupted more often (all 10 non-extended programmes planned for more than 30 months, against 49\% of those planned for 30 months or less), in line with Reinsberg et al. (2022, p. 1028), who find that longer agreements fail more often. Extended facilities (EFF or ECF) come second, with 38\% of extended training programmes interrupted against 60\% of the others, in line with the IMF’s review: “EFF and EFF-ECF arrangements, generally longer in duration than SBAs, had higher completion rates” (IMF, 2019, p. 45). In our sample the gap mainly reflects ECFs (36\% of training ECFs interrupted), which are also concessional; EFFs alone (57\%) differ little from SBAs (60\%). Section~\ref{sec:policy} discusses whether higher completion in extended programmes reflects better implementation. Access relative to quota ranks third and prior actions fourth (48\% interrupted with at least one prior action, against 37\% without), in line with the IMF’s finding of “a negative association between PAs [prior actions] at arrangement approval and completion rates” (IMF, 2019, p. 45).}
+\src{The number of scheduled reviews is the strongest input (Figure~\ref{fig:rf-importance}): 85\% of training programmes with eight or more reviews were interrupted, against 36\% of the others. Part of this is mechanical, as each extra review is one more chance to miss one (Section~\ref{sec:variables}). Because this link is partly built into the outcome, the forest’s training-set signal should be read as an upper bound on what approval-day information reveals about implementation. Programme length receives little importance on its own because it overlaps with the extended indicator (\emph{r} = 0.77); within each facility type, longer training programmes were interrupted more often (all 10 non-extended programmes planned for more than 30 months, against 49\% of those planned for 30 months or less), in line with Reinsberg et al. (2022, p. 1028), who find that longer agreements fail more often. Extended facilities (EFF or ECF) come second, with 38\% of extended training programmes interrupted against 60\% of the others, in line with the IMF’s review: “EFF and EFF-ECF arrangements, generally longer in duration than SBAs, had higher completion rates” (IMF, 2019, p. 45). In our sample the gap mainly reflects ECFs (36\% of training ECFs interrupted), which are also concessional; EFFs alone (57\%) differ little from SBAs (60\%). Section~\ref{sec:discussion} discusses whether higher completion in extended programmes reflects better implementation. Access relative to quota ranks third and prior actions fourth (48\% interrupted with at least one prior action, against 37\% without), in line with the IMF’s finding of “a negative association between PAs [prior actions] at arrangement approval and completion rates” (IMF, 2019, p. 45).}
 
-\src{Growth and inflation add no predictive value. Several regression studies find initial economic conditions largely insignificant (Ivanova et al., 2003, p. 1; Reinsberg et al., 2022, p. 1028), although Dreher (2003) reports associations with initial economic vulnerability, and our macro inputs are staff projections, which may be optimistic (Section~\ref{sec:variables}). The literature disagrees on conditionality: Reinsberg et al. (2022, p. 1028) find that structural conditions are associated with interruption, while Ivanova et al. (2003, p. 1) find no material effect. A simple count of structural conditions adds no predictive value in our forest, which therefore cannot test Reinsberg et al.’s finding on specific condition types. These importances describe patterns in the training sample that did not carry over clearly to the test period, and most values outside the top three are close to zero. Section~\ref{sec:alternatives} asks whether a simpler or a more flexible model does better.}
+\src{Growth and inflation add no predictive value here; staff projections may be optimistic, and the literature gives mixed findings on initial economic conditions (Ivanova et al., 2003, p. 1; Reinsberg et al., 2022, p. 1028; Dreher, 2003). A count of structural conditions also adds no predictive value, but it cannot test Reinsberg et al.’s (2022, p. 1028) finding on specific condition types.}
