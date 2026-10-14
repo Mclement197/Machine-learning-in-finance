@@ -27,11 +27,16 @@ Machine-learning-in-finance/
 |-- Data_Prep/
 |   |-- 01_data.R            # Cleans data and creates train.csv and test.csv
 |   `-- figures/             # Generated exploratory-analysis figures
+|-- Logistic_Regression/
+|   |-- Regression With plots.R
+|-- Neural_Network/
+|   |-- Neural_Network.R     # Trains, tests, tunes the neural network (with plots)
+|-- Presentation/            # Presentation source files
 |-- Random_Forest/
 |   |-- Random_Forest.R      # Trains, tunes, and tests the random forest
 |   `-- fig_*.png            # Generated model figures
-|-- Presentation/            # Presentation source files
 `-- README.md
+|-- Report/
 ```
 
 The files in `Data/processed/`, `Data/summary/`, and `Data_Prep/figures/` are
@@ -129,7 +134,7 @@ Random_Forest/Random_Forest.R
     v
 Trained model, test results, and figures
 ```
-
+You can repeat the same procedure for the logistic regression and the neural network.
 If the raw data or preparation logic changes, rerun `Data_Prep/01_data.R`
 before rerunning any model.
 
